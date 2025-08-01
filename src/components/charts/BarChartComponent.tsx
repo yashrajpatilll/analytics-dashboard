@@ -1,5 +1,6 @@
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTheme } from '@/hooks/useTheme';
 
 interface BarChartComponentProps {
   data: Array<{
@@ -17,8 +18,7 @@ export const BarChartComponent = memo(({
   yAxisKey,
   height = 300
 }: BarChartComponentProps) => {
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const { isDark, mounted } = useTheme();
 
   // Use hardcoded theme colors that match the CSS variables
   const lightColors = {
@@ -34,24 +34,6 @@ export const BarChartComponent = memo(({
     textColor: '#9CA3AF',
     bgColor: '#1F2937'
   };
-
-  useEffect(() => {
-    setMounted(true);
-    const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    };
-
-    checkDarkMode();
-    
-    // Listen for theme changes
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   const colors = isDark ? darkColors : lightColors;
 

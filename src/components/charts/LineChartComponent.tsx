@@ -1,5 +1,6 @@
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTheme } from '@/hooks/useTheme';
 
 interface LineChartComponentProps {
   data: Array<{
@@ -16,8 +17,7 @@ export const LineChartComponent = memo(({
   dataKey,
   height = 300
 }: LineChartComponentProps) => {
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const { isDark, mounted } = useTheme();
 
   // Use hardcoded theme colors that match the CSS variables
   const lightColors = {
@@ -33,24 +33,6 @@ export const LineChartComponent = memo(({
     textColor: '#9CA3AF',
     bgColor: '#1F2937'
   };
-
-  useEffect(() => {
-    setMounted(true);
-    const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    };
-
-    checkDarkMode();
-    
-    // Listen for theme changes
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   const colors = isDark ? darkColors : lightColors;
 
