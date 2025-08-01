@@ -135,7 +135,7 @@ export const Dashboard: React.FC = () => {
             onClick={reconnect}
             size="sm"
             variant="outline"
-            className="ml-2"
+            className="ml-2 "
           >
             Retry Connection
           </Button>
@@ -145,44 +145,47 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+    <div className="min-h-screen bg-background p-2 my-2 sm:my-0 sm:p-3 md:p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div className="">
-            <h1 className="text-2xl sm:text-2xl font-bold text-foreground">Analytics Dashboard</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">Real-time website performance monitoring</p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Activity className="w-4 h-4" />
-                <span className="font-medium">{performanceMetrics.dataPointsCount} data points</span>
-              </div>
+        <div className="space-y-4 px-1">
+          {/* First row: Title and Theme Toggle */}
+          <div className="flex justify-between items-center">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Analytics Dashboard</h1>
+              <p className="text-muted-foreground text-xs sm:text-sm">Real-time website performance monitoring</p>
             </div>
+            <ThemeToggle />
+          </div>
+          
+          {/* Second row: Connection Status and Data Points */}
+          <div className="flex flex-row justify-between items-center gap-2 sm:gap-4 mt-2">
             <ConnectionStatus />
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+              <Activity className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="font-medium">{performanceMetrics.dataPointsCount} data points</span>
+            </div>
           </div>
         </div>
 
         {/* Site Selector */}
-        <Card className="p-4 border-0 bg-card/50 shadow-sm">
-          <h2 className="text-lg font-semibold mb-3 text-foreground">Select Site</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <Card className="p-3 sm:p-4 border-0 bg-card/50 shadow-sm gap-2 sm:gap-3 md:gap-6">
+          <h2 className="text-base sm:text-lg font-semibold mb-1 text-foreground">Select Site</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {sites.map((site) => (
               <Button
                 key={site.siteId}
                 onClick={() => setSelectedSite(site.siteId)}
                 variant={selectedSiteId === site.siteId ? 'default' : 'outline'}
-                className={`justify-start h-auto p-3 transition-all duration-200 border-0 ${
+                className={`justify-start h-auto p-2 sm:p-3 transition-all duration-200 border-0 text-left ${
                   selectedSiteId === site.siteId 
                     ? 'ring-1 ring-ring/20 shadow-sm bg-primary text-primary-foreground' 
                     : 'hover:shadow-sm bg-muted/30 hover:bg-muted/50'
                 }`}
               >
-                <div className="flex flex-col items-start w-full">
-                  <span className="font-semibold text-sm">{site.siteName}</span>
-                  <span className={`text-xs mt-1 ${
+                <div className="flex flex-col items-start w-full min-w-0">
+                  <span className="font-semibold text-xs sm:text-sm truncate w-full">{site.siteName}</span>
+                  <span className={`text-xs mt-0.5 sm:mt-1 ${
                     selectedSiteId === site.siteId 
                       ? 'text-primary-foreground/80' 
                       : 'text-muted-foreground'
@@ -195,32 +198,27 @@ export const Dashboard: React.FC = () => {
           </div>
           {sites.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground mb-2">
+              <p className="text-muted-foreground text-sm sm:text-base mb-2">
                 {connectionStatus === 'connected' 
                   ? 'No sites connected. Waiting for data...' 
                   : 'No data available. Start the WebSocket server to see analytics data.'}
               </p>
-              {connectionStatus !== 'connected' && (
-                <p className="text-xs text-muted-foreground/70">
-                  Make sure the server is running on localhost:8080
-                </p>
-              )}
             </div>
           )}
         </Card>
 
         {/* Charts */}
         {selectedSite && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Top Row - Line Chart Full Width */}
-            <Card className="p-4 sm:p-6 border-0 bg-card/50 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Page Views Trend</h3>
+            <Card className="p-2 pb-24 sm:pb-14 md:pb-8 md:p-6 border-0 bg-card/50 shadow-sm">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-foreground">Page Views Trend</h3>
                 <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
                   Last 30 points
                 </span>
               </div>
-              <div className="h-64 sm:h-80">
+              <div className="h-48 sm:h-56 md:h-72 lg:h-80">
                 <LineChartComponent 
                   data={chartData}
                   dataKey="pageViews"
@@ -228,16 +226,16 @@ export const Dashboard: React.FC = () => {
               </div>
             </Card>
 
-            {/* Bottom Row - Bar Chart and Heatmap Side by Side */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <Card className="p-4 sm:p-6 border-0 bg-card/50 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Performance Metrics</h3>
+            {/* Bottom Row - Bar Chart and Heatmap */}
+            <div className="space-y-4 sm:space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+              <Card className="p-2 pb-24 sm:pb-14 md:pb-8 md:p-6 border-0 bg-card/50 shadow-sm">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-sm sm:text-base md:text-lg font-semibold text-foreground">Performance Metrics</h3>
                   <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
                     Load Time (ms)
                   </span>
                 </div>
-                <div className="h-64 sm:h-80">
+                <div className="h-48 sm:h-56 md:h-72 lg:h-80">
                   <BarChartComponent 
                     data={chartData.slice(-10)}
                     xAxisKey="time"
@@ -246,17 +244,19 @@ export const Dashboard: React.FC = () => {
                 </div>
               </Card>
 
-              <Card className="p-4 sm:p-6 border-0 bg-card/50 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">User Behavior Heatmap</h3>
-                  <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+              <Card className="p-2 pb-24 sm:pb-14 md:pb-8 md:p-6 border-0 bg-card/50 shadow-sm">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-sm sm:text-base md:text-lg font-semibold text-foreground truncate">
+                    <span className="sm:hidden">User Heatmap</span>
+                    <span className="hidden sm:inline">User Behavior Heatmap</span>
+                  </h3>
+                  <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded flex-shrink-0">
                     Recent 20 points
                   </span>
                 </div>
-                <div className="h-64 sm:h-80">
+                <div className="h-72 lg:h-80">
                   <HeatMapComponent 
                     data={selectedSite.data.slice(-20)}
-                    height={320}
                   />
                 </div>
               </Card>
@@ -265,24 +265,24 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* Performance Monitor */}
-        <Card className="p-4 sm:p-6 border-0 bg-card/50 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-foreground">System Performance</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="flex flex-col space-y-1 p-3 bg-muted/30 rounded-lg">
+        <Card className="p-3 sm:p-4 md:p-6 border-0 bg-card/50 shadow-sm">
+          <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2 text-foreground">System Performance</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex flex-col space-y-1 p-2 sm:p-3 bg-muted/30 rounded-lg">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Memory Usage</span>
-              <span className="text-xl font-bold font-mono text-foreground">
-                {Math.round(performanceMetrics.memoryUsage)}<span className="text-sm text-muted-foreground ml-1">MB</span>
+              <span className="text-base sm:text-lg md:text-xl font-bold font-mono text-foreground">
+                {Math.round(performanceMetrics.memoryUsage)}<span className="text-xs sm:text-sm text-muted-foreground ml-1">MB</span>
               </span>
             </div>
-            <div className="flex flex-col space-y-1 p-3 bg-muted/30 rounded-lg">
+            <div className="flex flex-col space-y-1 p-2 sm:p-3 bg-muted/30 rounded-lg">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Frame Rate</span>
-              <span className="text-xl font-bold font-mono text-foreground">
-                {Math.round(performanceMetrics.fps)}<span className="text-sm text-muted-foreground ml-1">FPS</span>
+              <span className="text-base sm:text-lg md:text-xl font-bold font-mono text-foreground">
+                {Math.round(performanceMetrics.fps)}<span className="text-xs sm:text-sm text-muted-foreground ml-1">FPS</span>
               </span>
             </div>
-            <div className="flex flex-col space-y-1 p-3 bg-muted/30 rounded-lg">
+            <div className="flex flex-col space-y-1 p-2 sm:p-3 bg-muted/30 rounded-lg">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Data Points</span>
-              <span className="text-xl font-bold font-mono text-primary">
+              <span className="text-base sm:text-lg md:text-xl font-bold font-mono text-primary">
                 {performanceMetrics.dataPointsCount.toLocaleString()}
               </span>
             </div>

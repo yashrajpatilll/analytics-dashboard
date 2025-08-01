@@ -50,7 +50,7 @@ export const BarChartComponent = memo(({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <BarChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
         <CartesianGrid 
           strokeDasharray="3 3" 
           stroke={colors.gridColor}
@@ -59,15 +59,21 @@ export const BarChartComponent = memo(({
         <XAxis 
           dataKey={xAxisKey} 
           stroke={colors.textColor}
-          fontSize={12}
+          fontSize={9}
           tickLine={false}
           axisLine={false}
+          interval="preserveStartEnd"
+          angle={-45}
+          textAnchor="end"
+          height={60}
+          tick={{ fontSize: 9 }}
         />
         <YAxis 
           stroke={colors.textColor}
-          fontSize={12}
+          fontSize={10}
           tickLine={false}
           axisLine={false}
+          width={40}
         />
         <Tooltip
           contentStyle={{

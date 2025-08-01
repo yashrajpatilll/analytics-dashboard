@@ -16,7 +16,7 @@ interface HeatMapCell {
 
 export const HeatMapComponent = memo(({
   data,
-  height = 400
+  height = 200
 }: HeatMapComponentProps) => {
   const { isDark, mounted } = useTheme();
   const heatMapData = useMemo(() => {
@@ -41,8 +41,8 @@ export const HeatMapComponent = memo(({
       });
     });
 
-    const pageArray = Array.from(pages).slice(0, 6); // Limit to 6 pages for better visibility
-    const cellSize = 50;
+    const pageArray = Array.from(pages).slice(0, 3); // Limit to 3 pages for better mobile visibility
+    const cellSize = 35;
     const cells: HeatMapCell[] = [];
 
     pageArray.forEach((fromPage, x) => {
@@ -115,23 +115,23 @@ export const HeatMapComponent = memo(({
       <div className="min-w-0 flex-1 max-w-full h-full">
         <svg
           width="100%"
-          height={Math.max(svgHeight + 160, height)}
-          className="flex items-center justify-center max-w-full h-full"
-          viewBox={`0 0 ${Math.max(svgWidth + 200, 600)} ${Math.max(svgHeight + 160, height)}`}
+          height="100%"
+          className="max-w-full h-full"
+          viewBox={`0 0 ${Math.max(svgWidth + 120, 300)} ${Math.max(svgHeight + 80, 200)}`}
           preserveAspectRatio="xMidYMid meet"
         >
         {/* Y-axis labels */}
         {pages.map((page, index) => (
           <text
             key={`y-${page}`}
-            x={110}
-            y={index * cellSize + cellSize / 2 + 4 + 20}
+            x={65}
+            y={index * cellSize + cellSize / 2 + 4 + 10}
             textAnchor="end"
-            fontSize="13"
+            fontSize="9"
             fill="currentColor"
-            className="text-sm font-medium text-foreground m-2"
+            className="text-xs font-medium text-foreground"
           >
-            {page.length > 10 ? `${page.substring(0, 10)}...` : page}
+            {page.length > 5 ? `${page.substring(0, 5)}...` : page}
           </text>
         ))}
 
@@ -139,15 +139,15 @@ export const HeatMapComponent = memo(({
         {pages.map((page, index) => (
           <text
             key={`x-${page}`}
-            x={100 + index * cellSize + cellSize / 2}
-            y={svgHeight + 50}
+            x={70 + index * cellSize + cellSize / 2}
+            y={svgHeight + 30}
             textAnchor="middle"
-            fontSize="13"
+            fontSize="9"
             fill="currentColor"
-            className="text-sm font-medium text-foreground"
-            transform={`rotate(-45, ${120 + index * cellSize + cellSize / 2}, ${svgHeight + 40})`}
+            className="text-xs font-medium text-foreground"
+            transform={`rotate(-45, ${70 + index * cellSize + cellSize / 2}, ${svgHeight + 20})`}
           >
-            {page.length > 10 ? `${page.substring(0, 10)}...` : page}
+            {page.length > 5 ? `${page.substring(0, 5)}...` : page}
           </text>
         ))}
 
@@ -155,24 +155,24 @@ export const HeatMapComponent = memo(({
         {cells.map((cell, index) => (
           <g key={index}>
             <rect
-              x={120 + cell.x}
-              y={cell.y + 20}
+              x={70 + cell.x}
+              y={cell.y + 10}
               width={cellSize - 2}
               height={cellSize - 2}
               fill={getIntensity(cell.value)}
               stroke="hsl(var(--border))"
               strokeWidth={1}
-              rx={4}
+              rx={3}
               className="hover:stroke-primary hover:stroke-2 cursor-pointer transition-all duration-200 hover:opacity-90 hover:drop-shadow-sm"
             >
               <title>{`${cell.label}: ${cell.value} transitions`}</title>
             </rect>
             {cell.value > 0 && (
               <text
-                x={120 + cell.x + cellSize / 2}
-                y={cell.y + 20 + cellSize / 2 + 4}
+                x={70 + cell.x + cellSize / 2}
+                y={cell.y + 10 + cellSize / 2 + 3}
                 textAnchor="middle"
-                fontSize="12"
+                fontSize="8"
                 fill={(() => {
                   const intensity = cell.value / maxValue;
                   
@@ -193,7 +193,7 @@ export const HeatMapComponent = memo(({
         ))}
 
         {/* Legend */}
-        <g transform={`translate(${Math.max(svgWidth + 150, 460)}, 40)`}>
+        <g transform={`translate(${Math.max(svgWidth + 80, 250)}, 20)`}>
           {(() => {
             const textColor = isDark ? '#F9FAFB' : '#111827';
             const mutedTextColor = isDark ? '#D1D5DB' : '#6B7280';
@@ -203,13 +203,13 @@ export const HeatMapComponent = memo(({
             
             return (
               <>
-                <text x={0} y={0} fontSize="13" fill={textColor} fontWeight="600" className="text-sm font-semibold">
+                <text x={0} y={0} fontSize="10" fill={textColor} fontWeight="600" className="text-xs font-semibold">
                   Intensity
                 </text>
-                <rect x={0} y={15} width={20} height={10} fill={lowColor} stroke={borderColor} strokeWidth="1" rx="3" />
-                <text x={25} y={23} fontSize="11" fill={mutedTextColor} className="text-xs">Low</text>
-                <rect x={0} y={30} width={20} height={10} fill={highColor} stroke={borderColor} strokeWidth="1" rx="3" />
-                <text x={25} y={38} fontSize="11" fill={mutedTextColor} className="text-xs">High</text>
+                <rect x={0} y={10} width={14} height={6} fill={lowColor} stroke={borderColor} strokeWidth="1" rx="2" />
+                <text x={18} y={15} fontSize="9" fill={mutedTextColor} className="text-xs">Low</text>
+                <rect x={0} y={20} width={14} height={6} fill={highColor} stroke={borderColor} strokeWidth="1" rx="2" />
+                <text x={18} y={25} fontSize="9" fill={mutedTextColor} className="text-xs">High</text>
               </>
             );
           })()}

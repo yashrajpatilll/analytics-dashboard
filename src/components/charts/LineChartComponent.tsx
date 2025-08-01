@@ -49,7 +49,7 @@ export const LineChartComponent = memo(({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
         <defs>
           <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
             <stop 
@@ -72,15 +72,21 @@ export const LineChartComponent = memo(({
         <XAxis 
           dataKey="time" 
           stroke={colors.textColor}
-          fontSize={12}
+          fontSize={9}
           tickLine={false}
           axisLine={false}
+          interval="preserveStartEnd"
+          angle={-45}
+          textAnchor="end"
+          height={60}
+          tick={{ fontSize: 9 }}
         />
         <YAxis 
           stroke={colors.textColor}
-          fontSize={12}
+          fontSize={10}
           tickLine={false}
           axisLine={false}
+          width={40}
         />
         <Tooltip
           contentStyle={{
