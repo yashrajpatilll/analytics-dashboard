@@ -1,7 +1,12 @@
 const WebSocket = require('ws');
 const server = new WebSocket.Server({ port: 8080 });
+const url = require('url');
 
 console.log('🚀 Analytics WebSocket Server running on ws://localhost:8080');
+
+// Collaborative sessions storage
+const collaborativeSessions = new Map();
+const connectedClients = new Map();
 
 const sites = [
   { siteId: 'site_001', siteName: 'E-commerce Store' },
@@ -38,10 +43,43 @@ const generateDataPoint = () => {
   };
 };
 
-server.on('connection', (ws) => {
-  console.log('✅ Client connected');
+server.on('connection', (ws, request) => {
+  const query = url.parse(request.url, true).query;
+  const sessionId = query.sessionId;
+  const userId = query.userId;
+  const userName = query.userName;
   
+  // Store client info
+  ws.clientInfo = { sessionId, userId, userName };
+  connectedClients.set(ws, ws.clientInfo);
+  
+  if (sessionId && userId && userName) {
+    console.log(`✅ Collaborative client connected: ${userName} (${userId}) to session ${sessionId}`);
+    
+    // Join collaborative session
+    if (!collaborativeSessions.has(sessionId)) {
+      collaborativeSessions.set(sessionId, new Set());
+    }
+    collaborativeSessions.get(sessionId).add(ws);
+    
+    // Notify other clients in session about new user
+    const sessionClients = collaborativeSessions.get(sessionId);
+    sessionClients.forEach(client => {
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({
+          type: 'user-join',
+          userId: userId,
+          payload: { name: userName },
+          timestamp: new Date().toISOString(),
+          sessionId: sessionId
+        }));
+      }
+    });
+  } else {
+    console.log('✅ Analytics client connected');
+  }
 
+  // Send initial data burst
   for (let i = 0; i < 5; i++) {
     setTimeout(() => {
       if (ws.readyState === WebSocket.OPEN) {
@@ -59,8 +97,57 @@ server.on('connection', (ws) => {
     }
   }, 1000 + Math.random() * 2000);
   
+  // Handle collaborative messages
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data);
+      
+      if (sessionId && message.sessionId === sessionId) {
+        // Broadcast collaborative message to other clients in the same session
+        const sessionClients = collaborativeSessions.get(sessionId);
+        if (sessionClients) {
+          sessionClients.forEach(client => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+              client.send(data);
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.log('Error parsing collaborative message:', error);
+    }
+  });
+  
   ws.on('close', () => {
-    console.log('❌ Client disconnected');
+    console.log(`❌ Client disconnected: ${userName || 'Analytics client'}`);
     clearInterval(interval);
+    
+    // Handle collaborative session cleanup
+    if (sessionId && collaborativeSessions.has(sessionId)) {
+      const sessionClients = collaborativeSessions.get(sessionId);
+      sessionClients.delete(ws);
+      
+      // Notify other clients about user leaving
+      if (userId) {
+        sessionClients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'user-leave',
+              userId: userId,
+              payload: {},
+              timestamp: new Date().toISOString(),
+              sessionId: sessionId
+            }));
+          }
+        });
+      }
+      
+      // Clean up empty sessions
+      if (sessionClients.size === 0) {
+        collaborativeSessions.delete(sessionId);
+      }
+    }
+    
+    connectedClients.delete(ws);
   });
 });

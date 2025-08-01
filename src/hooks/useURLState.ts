@@ -46,8 +46,8 @@ export const useURLState = () => {
     router.replace(newURL, { scroll: false });
   }, [router, searchParams]);
 
-  // Parse URL parameters and update state
-  const syncFromURL = useCallback(() => {
+  // Sync from URL parameters on mount and URL changes
+  useEffect(() => {
     const urlSelectedSite = searchParams.get('selectedSite');
     const urlSearchQuery = searchParams.get('searchQuery') || '';
     const urlSortBy = searchParams.get('sortBy') as 'name' | 'lastUpdated' | 'dataCount' || 'name';
@@ -56,54 +56,57 @@ export const useURLState = () => {
     const urlDateEnd = searchParams.get('dateEnd') || undefined;
     const urlSessionId = searchParams.get('sessionId');
 
-    // Update selected site if different
-    if (urlSelectedSite !== selectedSiteId) {
+    // Only update if URL has explicit values (don't override with null)
+    if (urlSelectedSite && urlSelectedSite !== selectedSiteId) {
       setSelectedSite(urlSelectedSite);
     }
 
-    // Update filters if different
-    const newFilters: Partial<FilterState> = {
-      searchQuery: urlSearchQuery,
-      sortBy: urlSortBy,
-      sortOrder: urlSortOrder
-    };
+    // Update filters if they're different from URL
+    const newFilters: Partial<FilterState> = {};
+    let hasChanges = false;
 
-    if (urlDateStart && urlDateEnd) {
-      newFilters.dateRange = {
-        start: urlDateStart,
-        end: urlDateEnd
-      };
-    } else if (filters.dateRange) {
-      newFilters.dateRange = undefined;
+    if (filters.searchQuery !== urlSearchQuery) {
+      newFilters.searchQuery = urlSearchQuery;
+      hasChanges = true;
     }
 
-    // Check if filters actually changed
-    const filtersChanged = 
-      filters.searchQuery !== newFilters.searchQuery ||
-      filters.sortBy !== newFilters.sortBy ||
-      filters.sortOrder !== newFilters.sortOrder ||
-      JSON.stringify(filters.dateRange) !== JSON.stringify(newFilters.dateRange);
+    if (filters.sortBy !== urlSortBy) {
+      newFilters.sortBy = urlSortBy;
+      hasChanges = true;
+    }
 
-    if (filtersChanged) {
+    if (filters.sortOrder !== urlSortOrder) {
+      newFilters.sortOrder = urlSortOrder;
+      hasChanges = true;
+    }
+
+    if (urlDateStart && urlDateEnd) {
+      const urlDateRange = { start: urlDateStart, end: urlDateEnd };
+      if (JSON.stringify(filters.dateRange) !== JSON.stringify(urlDateRange)) {
+        newFilters.dateRange = urlDateRange;
+        hasChanges = true;
+      }
+    } else if (filters.dateRange) {
+      newFilters.dateRange = undefined;
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
       updateFilters(newFilters);
     }
 
     // Handle session ID
-    if (urlSessionId && urlSessionId !== sessionId) {
-      setSharedSession(urlSessionId);
-    } else if (!urlSessionId && sessionId) {
-      clearSharedSession();
+    if (urlSessionId !== sessionId) {
+      console.log('URL session change:', { urlSessionId, currentSessionId: sessionId });
+      if (urlSessionId) {
+        console.log('Setting shared session:', urlSessionId);
+        setSharedSession(urlSessionId);
+      } else if (sessionId) {
+        console.log('Clearing shared session');
+        clearSharedSession();
+      }
     }
-  }, [
-    searchParams, 
-    selectedSiteId, 
-    filters, 
-    sessionId,
-    setSelectedSite, 
-    updateFilters, 
-    setSharedSession, 
-    clearSharedSession
-  ]);
+  }, [searchParams]); // Only depend on URL changes
 
   // Update URL when store state changes
   useEffect(() => {
@@ -119,11 +122,6 @@ export const useURLState = () => {
 
     updateURL(updates);
   }, [selectedSiteId, filters, sessionId, updateURL]);
-
-  // Sync from URL on mount and URL changes
-  useEffect(() => {
-    syncFromURL();
-  }, [syncFromURL]);
 
   // Generate shareable URL
   const generateShareableURL = useCallback(() => {
@@ -146,8 +144,11 @@ export const useURLState = () => {
   // Start collaborative session
   const startCollaborativeSession = useCallback(() => {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log('Starting collaborative session:', newSessionId);
     setSharedSession(newSessionId);
-    return generateShareableURL();
+    const url = generateShareableURL();
+    console.log('Generated shareable URL:', url);
+    return url;
   }, [setSharedSession, generateShareableURL]);
 
   return {
