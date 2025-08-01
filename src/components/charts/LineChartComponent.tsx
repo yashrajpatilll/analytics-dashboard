@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface LineChartComponentProps {
@@ -16,6 +16,9 @@ export const LineChartComponent = memo(({
   dataKey,
   height = 300
 }: LineChartComponentProps) => {
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
   // Use hardcoded theme colors that match the CSS variables
   const lightColors = {
     chartColor: '#0055FF', // matches --chart-1 in light mode
@@ -31,12 +34,36 @@ export const LineChartComponent = memo(({
     bgColor: '#1F2937'
   };
 
-  // Simple dark mode detection
-  const isDark = typeof window !== 'undefined' 
-    ? document.documentElement.classList.contains('dark')
-    : false;
+  useEffect(() => {
+    setMounted(true);
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDarkMode();
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const colors = isDark ? darkColors : lightColors;
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <ResponsiveContainer width="100%" height={height}>
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-muted-foreground">Loading chart...</div>
+        </div>
+      </ResponsiveContainer>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={height}>

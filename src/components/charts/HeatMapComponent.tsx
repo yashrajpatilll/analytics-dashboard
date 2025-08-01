@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState, useEffect } from 'react';
 import { AnalyticsDataPoint } from '@/types/analytics';
 
 interface HeatMapComponentProps {
@@ -17,6 +17,26 @@ export const HeatMapComponent = memo(({
   data,
   height = 400
 }: HeatMapComponentProps) => {
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDarkMode();
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
   const heatMapData = useMemo(() => {
     if (!data.length) return { cells: [], pages: [], cellSize: 40 };
 
@@ -64,10 +84,6 @@ export const HeatMapComponent = memo(({
     : 1;
 
   const getIntensity = (value: number) => {
-    const isDark = typeof window !== 'undefined' 
-      ? document.documentElement.classList.contains('dark')
-      : false;
-      
     if (value === 0) {
       return isDark ? '#2C2C2E' : '#F2F2F7';
     }
@@ -84,6 +100,15 @@ export const HeatMapComponent = memo(({
       return `rgba(37, 99, 235, ${alpha})`; // Better blue for light mode
     }
   };
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="w-full h-full flex items-center justify-center" style={{ height }}>
+        <div className="text-muted-foreground">Loading heatmap...</div>
+      </div>
+    );
+  }
 
   if (!heatMapData.cells.length) {
     return (
@@ -167,9 +192,6 @@ export const HeatMapComponent = memo(({
                 textAnchor="middle"
                 fontSize="12"
                 fill={(() => {
-                  const isDark = typeof window !== 'undefined' 
-                    ? document.documentElement.classList.contains('dark')
-                    : false;
                   const intensity = cell.value / maxValue;
                   
                   if (isDark) {
@@ -191,9 +213,6 @@ export const HeatMapComponent = memo(({
         {/* Legend */}
         <g transform={`translate(${Math.max(svgWidth + 150, 460)}, 40)`}>
           {(() => {
-            const isDark = typeof window !== 'undefined' 
-              ? document.documentElement.classList.contains('dark')
-              : false;
             const textColor = isDark ? '#F9FAFB' : '#111827';
             const mutedTextColor = isDark ? '#D1D5DB' : '#6B7280';
             const lowColor = isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(37, 99, 235, 0.15)';
