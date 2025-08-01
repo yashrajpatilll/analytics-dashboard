@@ -29,6 +29,34 @@ export interface Site {
   lastUpdated: string;
 }
 
+export interface CollaborativeUser {
+  id: string;
+  name: string;
+  avatar?: string;
+  cursor?: {
+    x: number;
+    y: number;
+    elementId?: string;
+  };
+  joinedAt: string;
+  lastActivity: string;
+}
+
+export interface FilterState {
+  searchQuery: string;
+  sortBy: 'name' | 'lastUpdated' | 'dataCount';
+  sortOrder: 'asc' | 'desc';
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  performanceFilter?: {
+    minPageViews?: number;
+    maxBounceRate?: number;
+    minLoadTime?: number;
+  };
+}
+
 export interface DashboardState {
   sites: Site[];
   selectedSiteId: string | null;
@@ -40,4 +68,11 @@ export interface DashboardState {
     dataPointsCount: number;
     lastUpdateTime?: number;
   };
+  // Collaborative features
+  collaborativeUsers: CollaborativeUser[];
+  currentUser?: CollaborativeUser;
+  // Filtering and URL state
+  filters: FilterState;
+  isSharedSession: boolean;
+  sessionId?: string;
 }

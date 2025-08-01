@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { useURLState } from '@/hooks/useURLState';
 import { AnalyticsDataPoint } from '@/types/analytics';
 import { LineChartComponent } from '@/components/charts/LineChartComponent';
 import { BarChartComponent } from '@/components/charts/BarChartComponent';
@@ -11,11 +12,13 @@ import { HeatMapComponent } from '@/components/charts/HeatMapComponent';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { Activity, Wifi, WifiOff } from 'lucide-react';
+import { Activity, Wifi, WifiOff, Share2, Check } from 'lucide-react';
 
 const WEBSOCKET_URL = 'ws://localhost:8080';
 
 export const Dashboard: React.FC = () => {
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  
   const {
     sites,
     selectedSiteId,
@@ -27,6 +30,9 @@ export const Dashboard: React.FC = () => {
     updatePerformanceMetrics,
     pruneOldData
   } = useDashboardStore();
+
+  // URL state management
+  const { generateShareableURL } = useURLState();
 
   // Memoize WebSocket callbacks to prevent unnecessary reconnections
   const handleMessage = useCallback((data: AnalyticsDataPoint) => {
@@ -144,18 +150,47 @@ export const Dashboard: React.FC = () => {
     );
   };
 
+  const handleShare = async () => {
+    try {
+      const url = generateShareableURL();
+      await navigator.clipboard.writeText(url);
+      setShareStatus('copied');
+      setTimeout(() => setShareStatus('idle'), 2000);
+    } catch (error) {
+      setShareStatus('error');
+      setTimeout(() => setShareStatus('idle'), 2000);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-2 my-2 sm:my-0 sm:p-3 md:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
         {/* Header */}
         <div className="space-y-4 px-1">
-          {/* First row: Title and Theme Toggle */}
+          {/* First row: Title and Controls */}
           <div className="flex justify-between items-center">
             <div className="min-w-0 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Analytics Dashboard</h1>
               <p className="text-muted-foreground text-xs sm:text-sm">Real-time website performance monitoring</p>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleShare}
+                size="sm"
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                {shareStatus === 'copied' ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Share2 className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">
+                  {shareStatus === 'copied' ? 'Copied!' : shareStatus === 'error' ? 'Error' : 'Share'}
+                </span>
+              </Button>
+              <ThemeToggle />
+            </div>
           </div>
           
           {/* Second row: Connection Status and Data Points */}
