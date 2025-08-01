@@ -33,8 +33,9 @@ export const Dashboard: React.FC = () => {
     addDataPoint(data);
   }, [addDataPoint]);
 
-  const handleError = useCallback((error: Event) => {
-    console.error('WebSocket connection error:', error);
+  const handleError = useCallback(() => {
+    // Graceful error handling - don't spam console with empty objects
+    console.warn('WebSocket server appears to be unavailable. The dashboard will work once the server is started.');
     setConnectionStatus('error');
   }, [setConnectionStatus]);
 
@@ -91,32 +92,57 @@ export const Dashboard: React.FC = () => {
     }));
   }, [selectedSite]);
 
-  const ConnectionStatus = () => (
-    <div className="flex items-center gap-2">
-      {connectionStatus === 'connected' ? (
-        <Wifi className="w-4 h-4 text-primary" />
-      ) : (
-        <WifiOff className="w-4 h-4 text-destructive" />
-      )}
-      <span className={`text-sm font-medium ${
-        connectionStatus === 'connected' 
-          ? ' text-primary' 
-          : ' text-destructive'
-      }`}>
-        {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
-      </span>
-      {connectionStatus !== 'connected' && (
-        <Button
-          onClick={reconnect}
-          size="sm"
-          variant="outline"
-          className="ml-2"
-        >
-          Reconnect
-        </Button>
-      )}
-    </div>
-  );
+  const ConnectionStatus = () => {
+    const getStatusDisplay = () => {
+      switch (connectionStatus) {
+        case 'connected':
+          return {
+            icon: <Wifi className="w-4 h-4 text-green-600" />,
+            text: 'Connected',
+            className: 'text-green-600'
+          };
+        case 'connecting':
+          return {
+            icon: <Wifi className="w-4 h-4 text-yellow-500 animate-pulse" />,
+            text: 'Connecting...',
+            className: 'text-yellow-600'
+          };
+        case 'error':
+          return {
+            icon: <WifiOff className="w-4 h-4 text-red-500" />,
+            text: 'Server Unavailable',
+            className: 'text-red-600'
+          };
+        default:
+          return {
+            icon: <WifiOff className="w-4 h-4 text-gray-500" />,
+            text: 'Disconnected',
+            className: 'text-gray-600'
+          };
+      }
+    };
+
+    const status = getStatusDisplay();
+
+    return (
+      <div className="flex items-center gap-2">
+        {status.icon}
+        <span className={`text-sm font-medium ${status.className}`}>
+          {status.text}
+        </span>
+        {connectionStatus !== 'connected' && connectionStatus !== 'connecting' && (
+          <Button
+            onClick={reconnect}
+            size="sm"
+            variant="outline"
+            className="ml-2"
+          >
+            Retry Connection
+          </Button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
@@ -168,9 +194,18 @@ export const Dashboard: React.FC = () => {
             ))}
           </div>
           {sites.length === 0 && (
-            <p className="text-muted-foreground text-center py-8">
-              No sites connected. Waiting for data...
-            </p>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-2">
+                {connectionStatus === 'connected' 
+                  ? 'No sites connected. Waiting for data...' 
+                  : 'No data available. Start the WebSocket server to see analytics data.'}
+              </p>
+              {connectionStatus !== 'connected' && (
+                <p className="text-xs text-muted-foreground/70">
+                  Make sure the server is running on localhost:8080
+                </p>
+              )}
+            </div>
           )}
         </Card>
 
