@@ -3,14 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 interface PerformanceMetrics {
   memoryUsage: number;
   fps: number;
-  dataPointsCount: number;
 }
 
 export const usePerformanceMonitor = (): PerformanceMetrics => {
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     memoryUsage: 0,
-    fps: 0,
-    dataPointsCount: 0
+    fps: 0
   });
 
   const frameCountRef = useRef(0);

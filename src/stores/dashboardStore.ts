@@ -31,15 +31,6 @@ export const useDashboardStore = create<DashboardStore>()(
       // Actions
       addDataPoint: (dataPoint: AnalyticsDataPoint) => {
         set((state) => {
-          // Throttle updates to prevent excessive re-renders
-          const now = Date.now();
-          const lastUpdate = state.performanceMetrics.lastUpdateTime || 0;
-          
-          // Limit updates to max 5 per second to reduce memory pressure
-          if (now - lastUpdate < 200) {
-            return state; // Skip this update
-          }
-
           const existingSiteIndex = state.sites.findIndex(
             site => site.siteId === dataPoint.siteId
           );
@@ -76,7 +67,7 @@ export const useDashboardStore = create<DashboardStore>()(
             updatedSites = [...state.sites, newSite];
           }
 
-          // Update performance metrics
+          // Calculate total data points
           const totalDataPoints = updatedSites.reduce(
             (total, site) => total + site.data.length,
             0
@@ -87,8 +78,7 @@ export const useDashboardStore = create<DashboardStore>()(
             isConnected: true,
             performanceMetrics: {
               ...state.performanceMetrics,
-              dataPointsCount: totalDataPoints,
-              lastUpdateTime: now
+              dataPointsCount: totalDataPoints
             }
           };
         });

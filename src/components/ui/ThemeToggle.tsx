@@ -11,7 +11,7 @@ export const ThemeToggle: React.FC = () => {
   return (
     <Button
       onClick={toggleTheme}
-      variant="outline"
+      variant="ghost"
       size="sm"
       className="p-2"
       aria-label={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}

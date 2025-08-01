@@ -39,14 +39,14 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+        <div className="min-h-screen bg-background p-4 flex items-center justify-center">
           <Card className="p-6 max-w-2xl w-full">
             <div className="text-center">
-              <div className="text-red-500 text-6xl mb-4">⚠️</div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              <div className="text-destructive text-6xl mb-4">⚠️</div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">
                 Something went wrong
               </h1>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 The application encountered an unexpected error. Please try refreshing the page.
               </p>
               
@@ -63,11 +63,11 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="text-left bg-gray-100 p-4 rounded-lg">
-                  <summary className="cursor-pointer font-medium text-gray-700 mb-2">
+                <details className="text-left bg-muted/50 p-4 rounded-lg border border-border/50">
+                  <summary className="cursor-pointer font-medium text-foreground mb-2">
                     Error Details (Development Only)
                   </summary>
-                  <pre className="text-sm text-red-600 overflow-auto">
+                  <pre className="text-sm text-destructive overflow-auto">
                     {this.state.error.toString()}
                     {this.state.errorInfo?.componentStack}
                   </pre>

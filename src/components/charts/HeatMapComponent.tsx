@@ -15,7 +15,7 @@ interface HeatMapCell {
 
 export const HeatMapComponent = memo(({
   data,
-  height = 300
+  height = 400
 }: HeatMapComponentProps) => {
   const heatMapData = useMemo(() => {
     if (!data.length) return { cells: [], pages: [], cellSize: 40 };
@@ -39,8 +39,8 @@ export const HeatMapComponent = memo(({
       });
     });
 
-    const pageArray = Array.from(pages).slice(0, 8); // Limit to 8 pages for visibility
-    const cellSize = 40;
+    const pageArray = Array.from(pages).slice(0, 6); // Limit to 6 pages for better visibility
+    const cellSize = 50;
     const cells: HeatMapCell[] = [];
 
     pageArray.forEach((fromPage, x) => {
@@ -64,17 +64,37 @@ export const HeatMapComponent = memo(({
     : 1;
 
   const getIntensity = (value: number) => {
+    const isDark = typeof window !== 'undefined' 
+      ? document.documentElement.classList.contains('dark')
+      : false;
+      
+    if (value === 0) {
+      return isDark ? '#2C2C2E' : '#F2F2F7';
+    }
+    
     const intensity = value / maxValue;
-    return `rgba(59, 130, 246, ${Math.max(0.1, intensity)})`;
+    
+    if (isDark) {
+      // In dark mode, use brighter colors with higher base opacity
+      const alpha = Math.max(0.3, intensity * 0.85);
+      return `rgba(59, 130, 246, ${alpha})`; // Better blue for dark mode
+    } else {
+      // In light mode, use more subtle colors
+      const alpha = Math.max(0.15, intensity * 0.7);
+      return `rgba(37, 99, 235, ${alpha})`; // Better blue for light mode
+    }
   };
 
   if (!heatMapData.cells.length) {
     return (
       <div 
-        className="flex items-center justify-center bg-gray-50 rounded-lg"
+        className="flex items-center justify-center bg-muted/50 rounded-lg border-2 border-dashed border-muted"
         style={{ height }}
       >
-        <p className="text-gray-500">No user flow data available</p>
+        <div className="text-center">
+          <p className="text-muted-foreground font-medium">No user flow data available</p>
+          <p className="text-muted-foreground/70 text-sm mt-1">Data will appear here once user interactions are tracked</p>
+        </div>
       </div>
     );
   }
@@ -84,22 +104,25 @@ export const HeatMapComponent = memo(({
   const svgHeight = pages.length * cellSize;
 
   return (
-    <div className="w-full overflow-auto">
-      <svg
-        width={svgWidth + 100} // Extra space for labels
-        height={svgHeight + 100}
-        className="bg-white"
-      >
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="min-w-0 flex-1 max-w-full h-full">
+        <svg
+          width="100%"
+          height={Math.max(svgHeight + 160, height)}
+          className="flex items-center justify-center max-w-full h-full"
+          viewBox={`0 0 ${Math.max(svgWidth + 200, 600)} ${Math.max(svgHeight + 160, height)}`}
+          preserveAspectRatio="xMidYMid meet"
+        >
         {/* Y-axis labels */}
         {pages.map((page, index) => (
           <text
             key={`y-${page}`}
-            x={90}
-            y={index * cellSize + cellSize / 2 + 4}
+            x={110}
+            y={index * cellSize + cellSize / 2 + 4 + 20}
             textAnchor="end"
-            fontSize="12"
-            fill="#6b7280"
-            className="text-xs"
+            fontSize="13"
+            fill="currentColor"
+            className="text-sm font-medium text-foreground m-2"
           >
             {page.length > 10 ? `${page.substring(0, 10)}...` : page}
           </text>
@@ -110,12 +133,12 @@ export const HeatMapComponent = memo(({
           <text
             key={`x-${page}`}
             x={100 + index * cellSize + cellSize / 2}
-            y={svgHeight + 20}
+            y={svgHeight + 50}
             textAnchor="middle"
-            fontSize="12"
-            fill="#6b7280"
-            className="text-xs"
-            transform={`rotate(-45, ${100 + index * cellSize + cellSize / 2}, ${svgHeight + 20})`}
+            fontSize="13"
+            fill="currentColor"
+            className="text-sm font-medium text-foreground"
+            transform={`rotate(-45, ${120 + index * cellSize + cellSize / 2}, ${svgHeight + 40})`}
           >
             {page.length > 10 ? `${page.substring(0, 10)}...` : page}
           </text>
@@ -125,25 +148,39 @@ export const HeatMapComponent = memo(({
         {cells.map((cell, index) => (
           <g key={index}>
             <rect
-              x={100 + cell.x}
-              y={cell.y}
-              width={cellSize - 1}
-              height={cellSize - 1}
+              x={120 + cell.x}
+              y={cell.y + 20}
+              width={cellSize - 2}
+              height={cellSize - 2}
               fill={getIntensity(cell.value)}
-              stroke="#ffffff"
+              stroke="hsl(var(--border))"
               strokeWidth={1}
-              className="hover:stroke-gray-400 cursor-pointer"
+              rx={4}
+              className="hover:stroke-primary hover:stroke-2 cursor-pointer transition-all duration-200 hover:opacity-90 hover:drop-shadow-sm"
             >
               <title>{`${cell.label}: ${cell.value} transitions`}</title>
             </rect>
             {cell.value > 0 && (
               <text
-                x={100 + cell.x + cellSize / 2}
-                y={cell.y + cellSize / 2 + 4}
+                x={120 + cell.x + cellSize / 2}
+                y={cell.y + 20 + cellSize / 2 + 4}
                 textAnchor="middle"
-                fontSize="10"
-                fill={cell.value / maxValue > 0.5 ? '#ffffff' : '#374151'}
-                className="pointer-events-none"
+                fontSize="12"
+                fill={(() => {
+                  const isDark = typeof window !== 'undefined' 
+                    ? document.documentElement.classList.contains('dark')
+                    : false;
+                  const intensity = cell.value / maxValue;
+                  
+                  if (isDark) {
+                    // In dark mode, use black text for high intensity, white text for low
+                    return intensity > 0.6 ? '#000000' : '#FFFFFF';
+                  } else {
+                    // In light mode, use white text for high intensity, dark text for low
+                    return intensity > 0.4 ? '#FFFFFF' : '#1F2937';
+                  }
+                })()}
+                className="pointer-events-none font-semibold"
               >
                 {cell.value}
               </text>
@@ -152,16 +189,32 @@ export const HeatMapComponent = memo(({
         ))}
 
         {/* Legend */}
-        <g transform={`translate(${svgWidth + 20}, 20)`}>
-          <text x={0} y={0} fontSize="12" fill="#374151" fontWeight="bold">
-            Transitions
-          </text>
-          <rect x={0} y={10} width={20} height={10} fill="rgba(59, 130, 246, 0.1)" />
-          <text x={25} y={19} fontSize="10" fill="#6b7280">Low</text>
-          <rect x={0} y={25} width={20} height={10} fill="rgba(59, 130, 246, 1)" />
-          <text x={25} y={34} fontSize="10" fill="#6b7280">High</text>
+        <g transform={`translate(${Math.max(svgWidth + 150, 460)}, 40)`}>
+          {(() => {
+            const isDark = typeof window !== 'undefined' 
+              ? document.documentElement.classList.contains('dark')
+              : false;
+            const textColor = isDark ? '#F9FAFB' : '#111827';
+            const mutedTextColor = isDark ? '#D1D5DB' : '#6B7280';
+            const lowColor = isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(37, 99, 235, 0.15)';
+            const highColor = isDark ? 'rgba(59, 130, 246, 0.85)' : 'rgba(37, 99, 235, 0.7)';
+            const borderColor = isDark ? '#4B5563' : '#D1D5DB';
+            
+            return (
+              <>
+                <text x={0} y={0} fontSize="13" fill={textColor} fontWeight="600" className="text-sm font-semibold">
+                  Intensity
+                </text>
+                <rect x={0} y={15} width={20} height={10} fill={lowColor} stroke={borderColor} strokeWidth="1" rx="3" />
+                <text x={25} y={23} fontSize="11" fill={mutedTextColor} className="text-xs">Low</text>
+                <rect x={0} y={30} width={20} height={10} fill={highColor} stroke={borderColor} strokeWidth="1" rx="3" />
+                <text x={25} y={38} fontSize="11" fill={mutedTextColor} className="text-xs">High</text>
+              </>
+            );
+          })()}
         </g>
-      </svg>
+        </svg>
+      </div>
     </div>
   );
 });

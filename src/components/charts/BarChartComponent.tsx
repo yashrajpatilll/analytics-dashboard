@@ -15,39 +15,64 @@ export const BarChartComponent = memo(({
   data,
   xAxisKey,
   yAxisKey,
-  fill = '#10b981',
   height = 300
 }: BarChartComponentProps) => {
+  // Use hardcoded theme colors that match the CSS variables
+  const lightColors = {
+    chartColor: '#34C759', // matches --chart-2 in light mode (green)
+    gridColor: '#D1D5DB',
+    textColor: '#6B7280',
+    bgColor: '#F3F4F6'
+  };
+
+  const darkColors = {
+    chartColor: '#30D158', // matches --chart-2 in dark mode (green)
+    gridColor: '#374151',
+    textColor: '#9CA3AF',
+    bgColor: '#1F2937'
+  };
+
+  // Simple dark mode detection
+  const isDark = typeof window !== 'undefined' 
+    ? document.documentElement.classList.contains('dark')
+    : false;
+
+  const colors = isDark ? darkColors : lightColors;
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+        <CartesianGrid 
+          strokeDasharray="3 3" 
+          stroke={colors.gridColor}
+          opacity={0.3}
+        />
         <XAxis 
           dataKey={xAxisKey} 
-          stroke="#6b7280"
+          stroke={colors.textColor}
           fontSize={12}
           tickLine={false}
           axisLine={false}
         />
         <YAxis 
-          stroke="#6b7280"
+          stroke={colors.textColor}
           fontSize={12}
           tickLine={false}
           axisLine={false}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '6px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+            backgroundColor: colors.bgColor,
+            border: `1px solid ${colors.gridColor}`,
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
           }}
-          labelStyle={{ color: '#374151' }}
+          labelStyle={{ color: isDark ? '#F3F4F6' : '#1F2937' }}
         />
         <Bar 
           dataKey={yAxisKey} 
-          fill={fill}
-          radius={[4, 4, 0, 0]}
+          fill={colors.chartColor}
+          radius={[6, 6, 0, 0]}
         />
       </BarChart>
     </ResponsiveContainer>

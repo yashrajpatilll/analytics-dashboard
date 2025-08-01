@@ -5,6 +5,7 @@ interface UseWebSocketProps {
   url: string;
   onMessage: (data: AnalyticsDataPoint) => void;
   onError?: (error: Event) => void;
+  onConnectionChange?: (status: 'connecting' | 'connected' | 'disconnected' | 'error') => void;
   reconnectInterval?: number;
   maxReconnectAttempts?: number;
 }
@@ -13,6 +14,7 @@ export const useWebSocket = ({
   url,
   onMessage,
   onError,
+  onConnectionChange,
   reconnectInterval = 3000,
   maxReconnectAttempts = 5
 }: UseWebSocketProps) => {
@@ -36,11 +38,13 @@ export const useWebSocket = ({
 
     try {
       setConnectionStatus('connecting');
+      onConnectionChange?.('connecting');
       ws.current = new WebSocket(url);
 
       ws.current.onopen = () => {
         console.log('WebSocket connected');
         setConnectionStatus('connected');
+        onConnectionChange?.('connected');
         setReconnectAttempts(0);
       };
 
@@ -63,11 +67,13 @@ export const useWebSocket = ({
       ws.current.onclose = (event) => {
         console.log('WebSocket disconnected', event.code, event.reason);
         setConnectionStatus('disconnected');
+        onConnectionChange?.('disconnected');
         
         // Only attempt reconnection if it wasn't a manual close and we haven't exceeded max attempts
         if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
           reconnectTimeoutRef.current = setTimeout(() => {
             setReconnectAttempts(prev => prev + 1);
+            onConnectionChange?.('connecting');
             connect();
           }, reconnectInterval);
         }
@@ -76,6 +82,7 @@ export const useWebSocket = ({
       ws.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         setConnectionStatus('error');
+        onConnectionChange?.('error');
         onError?.(error);
       };
 
@@ -83,7 +90,7 @@ export const useWebSocket = ({
       console.error('Failed to create WebSocket connection:', error);
       setConnectionStatus('error');
     }
-  }, [url, onMessage, onError, reconnectInterval, maxReconnectAttempts, reconnectAttempts]);
+  }, [url, onMessage, onError, onConnectionChange, reconnectInterval, maxReconnectAttempts, reconnectAttempts]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
