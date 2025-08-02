@@ -33,31 +33,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-      
-      if (error) {
-        console.error('Error fetching user profile:', error)
-        // Create a default profile if user_profiles table doesn't exist or user not found
-        const defaultProfile: UserProfile = {
-          id: userId,
-          email: '',
-          full_name: '',
-          role: 'Viewer',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-        setUserProfile(defaultProfile)
-        return
+      // TEMPORARILY DISABLED - Skip user profile fetching to prevent API loops
+      // Only log once per user session
+      if (!sessionStorage.getItem('profile_log_' + userId)) {
+        console.log('User profile fetching temporarily disabled for user:', userId);
+        sessionStorage.setItem('profile_log_' + userId, 'true');
       }
-
-      setUserProfile(data)
-    } catch (error) {
-      console.error('Error fetching user profile:', error)
-      // Fallback to default profile on any error
+      
+      // Create a default profile directly
       const defaultProfile: UserProfile = {
         id: userId,
         email: '',
@@ -67,6 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updated_at: new Date().toISOString()
       }
       setUserProfile(defaultProfile)
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error)
     }
   }, [supabase])
 

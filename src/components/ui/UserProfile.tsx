@@ -44,15 +44,18 @@ export const UserProfile: React.FC = () => {
 
   return (
     <div className="relative">
-      <button
+      <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-8 h-8 bg-primary/15 hover:bg-primary/25 border border-border rounded-full flex items-center justify-center transition-all duration-200 ring-offset-2 focus:outline-none focus:ring-2 focus:ring-primary/50 hover:scale-105"
+
+        variant="outline"
+        size="icon"
+        className="w-8 h-8 rounded-full"
         title={`${displayName} - Click for profile menu`}
       >
         <span className="text-sm font-semibold text-primary">
           {initials}
         </span>
-      </button>
+      </Button>
 
       {isOpen && (
         <>

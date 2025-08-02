@@ -29,7 +29,7 @@ export const BarChartComponent = memo(({
   };
 
   // Validate that we have data with valid Y values
-  const hasValidData = data.some(d => d[yAxisKey] != null && d[yAxisKey] > 0);
+  const hasValidData = data.some(d => d[yAxisKey] != null && Number(d[yAxisKey]) > 0);
   if (!hasValidData) {
     console.log('📊 BarChart: No valid data for yAxisKey:', yAxisKey);
   }

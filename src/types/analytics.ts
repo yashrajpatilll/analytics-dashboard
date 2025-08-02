@@ -29,18 +29,6 @@ export interface Site {
   lastUpdated: string;
 }
 
-export interface CollaborativeUser {
-  id: string;
-  name: string;
-  avatar?: string;
-  cursor?: {
-    x: number;
-    y: number;
-    elementId?: string;
-  };
-  joinedAt: string;
-  lastActivity: string;
-}
 
 export interface FilterState {
   searchQuery: string;
@@ -68,11 +56,6 @@ export interface DashboardState {
     dataPointsCount: number;
     lastUpdateTime?: number;
   };
-  // Collaborative features
-  collaborativeUsers: CollaborativeUser[];
-  currentUser?: CollaborativeUser;
   // Filtering and URL state
   filters: FilterState;
-  isSharedSession: boolean;
-  sessionId?: string;
 }
