@@ -12,6 +12,7 @@ import { HeatMapComponent } from '@/components/charts/HeatMapComponent';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { UserProfile } from '@/components/ui/UserProfile';
 import { Activity, Wifi, WifiOff, Share2, Check, Users } from 'lucide-react';
 
 const WEBSOCKET_URL = 'ws://localhost:8080';
@@ -201,6 +202,7 @@ export const Dashboard: React.FC = () => {
                 </span>
               </Button>
               <ThemeToggle />
+              <UserProfile />
             </div>
           </div>
           
