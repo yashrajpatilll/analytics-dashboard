@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error in fetchUserProfile:', error)
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     // Get initial session

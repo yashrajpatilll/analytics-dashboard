@@ -205,7 +205,7 @@ export const useWebSocket = ({
       clearTimeout(timeoutId);
       disconnect();
     };
-  }, [enabled, connect, disconnect]);
+  }, [enabled, connect, disconnect, url]);
 
   return {
     connectionStatus,

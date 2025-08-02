@@ -123,7 +123,8 @@ export const useURLState = () => {
     setTimeout(() => {
       isSyncingRef.current = false;
     }, 50);
-  }, [searchParams]); // Only depend on searchParams, not store state
+    // eslint-disable-next-line react-hooks/exhaustive-deps  
+  }, [searchParams]); // Intentionally excludes filter values and setters to prevent infinite loops
 
   // Update URL when store state changes (with sync guard)
   useEffect(() => {

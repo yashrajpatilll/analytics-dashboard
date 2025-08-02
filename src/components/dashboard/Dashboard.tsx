@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { UserProfile } from '@/components/ui/UserProfile';
 import { SiteFilters } from '@/components/ui/SiteFilters';
-import { Activity, Wifi, WifiOff, Share2, Check, Users } from 'lucide-react';
+import { Activity, Wifi, WifiOff, Share2, Check } from 'lucide-react';
 
 const WEBSOCKET_URL = 'ws://localhost:8080';
 
@@ -175,7 +175,7 @@ export const Dashboard: React.FC = () => {
     });
     
     return chartData;
-  }, [selectedSite, selectedSite?.data.length]); // Add data.length dependency for real-time updates
+  }, [selectedSite]); // Remove unnecessary data.length dependency
 
   // Prepare bar chart data (last 20 points, but updates dynamically)
   const barChartData = useMemo(() => {
@@ -246,7 +246,7 @@ export const Dashboard: React.FC = () => {
       await navigator.clipboard.writeText(url);
       setShareStatus('copied');
       setTimeout(() => setShareStatus('idle'), 2000);
-    } catch (error) {
+    } catch {
       setShareStatus('error');
       setTimeout(() => setShareStatus('idle'), 2000);
     }

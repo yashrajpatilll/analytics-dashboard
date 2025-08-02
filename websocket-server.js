@@ -1,6 +1,8 @@
 // Load environment variables
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 require('dotenv').config({ path: '.env.local' });
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const WebSocket = require('ws');
 const server = new WebSocket.Server({ port: 8080 });
 

@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { Site } from '@/types/analytics';
-import { useDashboardStore } from '@/stores/dashboardStore';
 
 interface VirtualizedSiteListProps {
   sites: Site[];
