@@ -77,14 +77,8 @@ export const useWebSocket = ({
       ws.current.onmessage = (event) => {
         try {
           const data: AnalyticsDataPoint = JSON.parse(event.data);
-          // Use requestIdleCallback only if available, otherwise use direct call
-          if (typeof requestIdleCallback !== 'undefined') {
-            requestIdleCallback(() => {
-              onMessage(data);
-            }, { timeout: 100 });
-          } else {
-            onMessage(data);
-          }
+          // Process immediately for real-time updates
+          onMessage(data);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }

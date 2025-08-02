@@ -155,15 +155,16 @@ export const Dashboard: React.FC = () => {
       return [];
     }
     
-    // Only take the last 30 data points for better performance
-    const recentData = selectedSite.data.slice(-30);
+    // Take the last 50 data points for better real-time visibility
+    const recentData = selectedSite.data.slice(-50);
     
-    const chartData = recentData.map(point => ({
+    const chartData = recentData.map((point, index) => ({
       time: new Date(point.timestamp).toLocaleTimeString(),
       pageViews: point.pageViews,
       uniqueVisitors: point.uniqueVisitors,
       bounceRate: Math.round(point.bounceRate * 100),
-      loadTime: Math.round(point.performanceMetrics.loadTime * 100) / 100
+      loadTime: Math.round(point.performanceMetrics.loadTime * 100) / 100,
+      dataIndex: index // Ensure React detects data changes
     }));
     
     console.log('📊 Chart data prepared:', { 
@@ -174,7 +175,18 @@ export const Dashboard: React.FC = () => {
     });
     
     return chartData;
-  }, [selectedSite]);
+  }, [selectedSite, selectedSite?.data.length]); // Add data.length dependency for real-time updates
+
+  // Prepare bar chart data (last 20 points, but updates dynamically)
+  const barChartData = useMemo(() => {
+    const data = chartData.slice(-20);
+    console.log('📊 Bar chart data updated:', { 
+      totalChartPoints: chartData.length,
+      barChartPoints: data.length,
+      latestLoadTime: data[data.length - 1]?.loadTime
+    });
+    return data;
+  }, [chartData]);
 
   const ConnectionStatus = () => {
     const getStatusDisplay = () => {
@@ -348,7 +360,7 @@ export const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <h3 className="text-sm sm:text-base md:text-lg font-semibold text-foreground">Page Views Trend</h3>
                 <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                  Last 30 points
+                  Last 50 points
                 </span>
               </div>
               <div className="h-48 sm:h-56 md:h-72 lg:h-80">
@@ -370,7 +382,7 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div className="h-48 sm:h-56 md:h-72 lg:h-80">
                   <BarChartComponent 
-                    data={chartData.slice(-10)}
+                    data={barChartData}
                     xAxisKey="time"
                     yAxisKey="loadTime"
                   />
