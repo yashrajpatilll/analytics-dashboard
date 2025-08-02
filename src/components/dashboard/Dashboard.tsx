@@ -5,7 +5,6 @@ import { useDashboardStore } from '@/stores/dashboardStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useURLState } from '@/hooks/useURLState';
-import { useCollaborativeWebSocket } from '@/hooks/useCollaborativeWebSocket';
 import { AnalyticsDataPoint } from '@/types/analytics';
 import { LineChartComponent } from '@/components/charts/LineChartComponent';
 import { BarChartComponent } from '@/components/charts/BarChartComponent';
@@ -13,7 +12,6 @@ import { HeatMapComponent } from '@/components/charts/HeatMapComponent';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { UserPresence } from '@/components/ui/UserPresence';
 import { Activity, Wifi, WifiOff, Share2, Check, Users } from 'lucide-react';
 
 const WEBSOCKET_URL = 'ws://localhost:8080';
@@ -26,9 +24,6 @@ export const Dashboard: React.FC = () => {
     selectedSiteId,
     connectionStatus,
     performanceMetrics,
-    sessionId,
-    collaborativeUsers,
-    filters,
     addDataPoint,
     setSelectedSite,
     setConnectionStatus,
@@ -37,43 +32,15 @@ export const Dashboard: React.FC = () => {
   } = useDashboardStore();
 
   // URL state management
-  const { generateShareableURL, startCollaborativeSession, isSharedSession } = useURLState();
+  const { generateShareableURL } = useURLState();
 
-  // Generate user ID and name for collaborative sessions
-  const userId = useMemo(() => 
-    `user_${Math.random().toString(36).substr(2, 9)}`, 
-    []
-  );
-  const userName = useMemo(() => 
-    `User ${userId.slice(-4)}`, 
-    [userId]
-  );
-
-  // Collaborative WebSocket
-  const { sendFilterChange } = useCollaborativeWebSocket({
-    enabled: isSharedSession,
-    sessionId,
-    userId,
-    userName
-  });
-
-  // Debug collaborative state
-  useEffect(() => {
-    console.log('Dashboard collaborative state:', {
-      isSharedSession,
-      sessionId,
-      userId,
-      userName,
-      collaborativeUsersCount: collaborativeUsers.length
-    });
-  }, [isSharedSession, sessionId, userId, userName, collaborativeUsers.length]);
-
-  // Sync filter changes to collaborative session
-  useEffect(() => {
-    if (isSharedSession && sendFilterChange) {
-      sendFilterChange(filters);
+  // Handle site selection
+  const handleSiteSelection = useCallback((siteId: string) => {
+    if (siteId === selectedSiteId) {
+      return;
     }
-  }, [filters, isSharedSession, sendFilterChange]);
+    setSelectedSite(siteId);
+  }, [setSelectedSite, selectedSiteId]);
 
   // Memoize WebSocket callbacks to prevent unnecessary reconnections
   const handleMessage = useCallback((data: AnalyticsDataPoint) => {
@@ -95,7 +62,8 @@ export const Dashboard: React.FC = () => {
     url: WEBSOCKET_URL,
     onMessage: handleMessage,
     onError: handleError,
-    onConnectionChange: handleConnectionChange
+    onConnectionChange: handleConnectionChange,
+    enabled: true
   });
 
   // Setup performance monitoring
@@ -193,12 +161,7 @@ export const Dashboard: React.FC = () => {
 
   const handleShare = async () => {
     try {
-      let url;
-      if (isSharedSession) {
-        url = generateShareableURL();
-      } else {
-        url = startCollaborativeSession();
-      }
+      const url = generateShareableURL();
       await navigator.clipboard.writeText(url);
       setShareStatus('copied');
       setTimeout(() => setShareStatus('idle'), 2000);
@@ -220,14 +183,6 @@ export const Dashboard: React.FC = () => {
               <p className="text-muted-foreground text-xs sm:text-sm">Real-time website performance monitoring</p>
             </div>
             <div className="flex items-center gap-2">
-              {isSharedSession && (
-                <div className="flex items-center gap-2 mr-2">
-                  <Users className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-600">
-                    Live ({collaborativeUsers.length + 1})
-                  </span>
-                </div>
-              )}
               <Button
                 onClick={handleShare}
                 size="sm"
@@ -236,15 +191,13 @@ export const Dashboard: React.FC = () => {
               >
                 {shareStatus === 'copied' ? (
                   <Check className="w-4 h-4" />
-                ) : isSharedSession ? (
-                  <Users className="w-4 h-4" />
                 ) : (
                   <Share2 className="w-4 h-4" />
                 )}
                 <span className="hidden sm:inline">
                   {shareStatus === 'copied' ? 'Copied!' : 
                    shareStatus === 'error' ? 'Error' : 
-                   isSharedSession ? 'Share Session' : 'Start Collaboration'}
+                   'Share Dashboard'}
                 </span>
               </Button>
               <ThemeToggle />
@@ -268,7 +221,7 @@ export const Dashboard: React.FC = () => {
             {sites.map((site) => (
               <Button
                 key={site.siteId}
-                onClick={() => setSelectedSite(site.siteId)}
+                onClick={() => handleSiteSelection(site.siteId)}
                 variant={selectedSiteId === site.siteId ? 'default' : 'outline'}
                 className={`justify-start h-auto p-2 sm:p-3 transition-all duration-200 border-0 text-left ${
                   selectedSiteId === site.siteId 
@@ -382,8 +335,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </Card>
 
-        {/* User Presence and Collaborative Cursors */}
-        <UserPresence />
       </div>
     </div>
   );

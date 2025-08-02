@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { AnalyticsDataPoint, Site, DashboardState, CollaborativeUser, FilterState } from '@/types/analytics';
+import { AnalyticsDataPoint, Site, DashboardState, FilterState } from '@/types/analytics';
 
 interface DashboardActions {
   addDataPoint: (dataPoint: AnalyticsDataPoint) => void;
@@ -8,17 +8,9 @@ interface DashboardActions {
   setConnectionStatus: (status: DashboardState['connectionStatus']) => void;
   updatePerformanceMetrics: (metrics: Partial<DashboardState['performanceMetrics']>) => void;
   pruneOldData: (maxAge: number) => void;
-  // Collaborative actions
-  addCollaborativeUser: (user: CollaborativeUser) => void;
-  removeCollaborativeUser: (userId: string) => void;
-  updateUserCursor: (userId: string, cursor: CollaborativeUser['cursor']) => void;
-  setCurrentUser: (user: CollaborativeUser) => void;
   // Filter actions
   updateFilters: (filters: Partial<FilterState>) => void;
   resetFilters: () => void;
-  // URL state actions
-  setSharedSession: (sessionId: string) => void;
-  clearSharedSession: () => void;
 }
 
 type DashboardStore = DashboardState & DashboardActions;
@@ -44,13 +36,8 @@ export const useDashboardStore = create<DashboardStore>()(
         fps: 0,
         dataPointsCount: 0
       },
-      // Collaborative state
-      collaborativeUsers: [],
-      currentUser: undefined,
       // Filter state
       filters: defaultFilters,
-      isSharedSession: false,
-      sessionId: undefined,
 
       // Actions
       addDataPoint: (dataPoint: AnalyticsDataPoint) => {
@@ -141,33 +128,6 @@ export const useDashboardStore = create<DashboardStore>()(
         }));
       },
 
-      // Collaborative actions
-      addCollaborativeUser: (user: CollaborativeUser) => {
-        set((state) => ({
-          collaborativeUsers: [...state.collaborativeUsers.filter(u => u.id !== user.id), user]
-        }));
-      },
-
-      removeCollaborativeUser: (userId: string) => {
-        set((state) => ({
-          collaborativeUsers: state.collaborativeUsers.filter(u => u.id !== userId)
-        }));
-      },
-
-      updateUserCursor: (userId: string, cursor: CollaborativeUser['cursor']) => {
-        set((state) => ({
-          collaborativeUsers: state.collaborativeUsers.map(user =>
-            user.id === userId
-              ? { ...user, cursor, lastActivity: new Date().toISOString() }
-              : user
-          )
-        }));
-      },
-
-      setCurrentUser: (user: CollaborativeUser) => {
-        set({ currentUser: user });
-      },
-
       // Filter actions
       updateFilters: (filters: Partial<FilterState>) => {
         set((state) => ({
@@ -177,23 +137,6 @@ export const useDashboardStore = create<DashboardStore>()(
 
       resetFilters: () => {
         set({ filters: defaultFilters });
-      },
-
-      // URL state actions
-      setSharedSession: (sessionId: string) => {
-        set({ 
-          isSharedSession: true, 
-          sessionId 
-        });
-      },
-
-      clearSharedSession: () => {
-        set({ 
-          isSharedSession: false, 
-          sessionId: undefined,
-          collaborativeUsers: [],
-          currentUser: undefined 
-        });
       }
     }),
     {

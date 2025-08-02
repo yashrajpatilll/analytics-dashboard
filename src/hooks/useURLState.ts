@@ -12,7 +12,6 @@ interface URLStateParams {
   sortOrder?: 'asc' | 'desc';
   dateStart?: string;
   dateEnd?: string;
-  sessionId?: string;
 }
 
 export const useURLState = () => {
@@ -21,11 +20,8 @@ export const useURLState = () => {
   const { 
     filters, 
     selectedSiteId, 
-    sessionId,
     updateFilters, 
-    setSelectedSite,
-    setSharedSession,
-    clearSharedSession
+    setSelectedSite
   } = useDashboardStore();
 
   // Update URL when state changes
@@ -54,7 +50,6 @@ export const useURLState = () => {
     const urlSortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' || 'asc';
     const urlDateStart = searchParams.get('dateStart') || undefined;
     const urlDateEnd = searchParams.get('dateEnd') || undefined;
-    const urlSessionId = searchParams.get('sessionId');
 
     // Only update if URL has explicit values (don't override with null)
     if (urlSelectedSite && urlSelectedSite !== selectedSiteId) {
@@ -94,19 +89,7 @@ export const useURLState = () => {
     if (hasChanges) {
       updateFilters(newFilters);
     }
-
-    // Handle session ID
-    if (urlSessionId !== sessionId) {
-      console.log('URL session change:', { urlSessionId, currentSessionId: sessionId });
-      if (urlSessionId) {
-        console.log('Setting shared session:', urlSessionId);
-        setSharedSession(urlSessionId);
-      } else if (sessionId) {
-        console.log('Clearing shared session');
-        clearSharedSession();
-      }
-    }
-  }, [searchParams]); // Only depend on URL changes
+  }, [searchParams, selectedSiteId, filters, setSelectedSite, updateFilters]);
 
   // Update URL when store state changes
   useEffect(() => {
@@ -116,12 +99,11 @@ export const useURLState = () => {
       sortBy: filters.sortBy !== 'name' ? filters.sortBy : undefined,
       sortOrder: filters.sortOrder !== 'asc' ? filters.sortOrder : undefined,
       dateStart: filters.dateRange?.start,
-      dateEnd: filters.dateRange?.end,
-      sessionId: sessionId || undefined
+      dateEnd: filters.dateRange?.end
     };
 
     updateURL(updates);
-  }, [selectedSiteId, filters, sessionId, updateURL]);
+  }, [selectedSiteId, filters, updateURL]);
 
   // Generate shareable URL
   const generateShareableURL = useCallback(() => {
@@ -136,24 +118,11 @@ export const useURLState = () => {
       params.set('dateStart', filters.dateRange.start);
       params.set('dateEnd', filters.dateRange.end);
     }
-    if (sessionId) params.set('sessionId', sessionId);
 
     return `${baseURL}?${params.toString()}`;
-  }, [selectedSiteId, filters, sessionId]);
-
-  // Start collaborative session
-  const startCollaborativeSession = useCallback(() => {
-    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('Starting collaborative session:', newSessionId);
-    setSharedSession(newSessionId);
-    const url = generateShareableURL();
-    console.log('Generated shareable URL:', url);
-    return url;
-  }, [setSharedSession, generateShareableURL]);
+  }, [selectedSiteId, filters]);
 
   return {
-    generateShareableURL,
-    startCollaborativeSession,
-    isSharedSession: !!sessionId
+    generateShareableURL
   };
 };

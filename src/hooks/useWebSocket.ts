@@ -8,6 +8,7 @@ interface UseWebSocketProps {
   onConnectionChange?: (status: 'connecting' | 'connected' | 'disconnected' | 'error') => void;
   reconnectInterval?: number;
   maxReconnectAttempts?: number;
+  enabled?: boolean;
 }
 
 export const useWebSocket = ({
@@ -16,14 +17,35 @@ export const useWebSocket = ({
   onError,
   onConnectionChange,
   reconnectInterval = 3000,
-  maxReconnectAttempts = 5
+  maxReconnectAttempts = 5,
+  enabled = true
 }: UseWebSocketProps) => {
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const reconnectAttemptsRef = useRef(0);
+  const isConnectingRef = useRef(false); // Prevent concurrent connections
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
   const connect = useCallback(() => {
+    // Don't connect if disabled
+    if (!enabled) {
+      console.log(`🚫 Analytics WebSocket connection to ${url} is disabled`);
+      return;
+    }
+
+    // Prevent concurrent connection attempts
+    if (isConnectingRef.current || ws.current?.readyState === WebSocket.CONNECTING) {
+      console.log(`⏳ WebSocket connection to ${url} already in progress`);
+      return;
+    }
+
+    // Additional check: Don't connect if we already have a connected WebSocket
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      console.log(`✅ WebSocket to ${url} already connected`);
+      return;
+    }
+
     // Clean up existing connection first
     if (ws.current) {
       ws.current.close();
@@ -37,14 +59,18 @@ export const useWebSocket = ({
     }
 
     try {
+      console.log(`🔗 Attempting WebSocket connection to ${url}`);
+      isConnectingRef.current = true;
       setConnectionStatus('connecting');
       onConnectionChange?.('connecting');
       ws.current = new WebSocket(url);
 
       ws.current.onopen = () => {
-        console.log(`WebSocket connected to ${url}`);
+        console.log(`✅ WebSocket connected to ${url}`);
+        isConnectingRef.current = false;
         setConnectionStatus('connected');
         onConnectionChange?.('connected');
+        reconnectAttemptsRef.current = 0;
         setReconnectAttempts(0);
       };
 
@@ -92,8 +118,17 @@ export const useWebSocket = ({
         const isNormalClose = event.code === 1000;
         const shouldReconnect = !isNormalClose && 
                                event.code !== 1001 && // Don't reconnect on intentional navigation/shutdown
+                               event.code !== 1005 && // Don't reconnect on network interruption - often indicates client issues
                                event.code !== 1008 && // Don't reconnect on policy violations
-                               reconnectAttempts < maxReconnectAttempts;
+                               reconnectAttemptsRef.current < maxReconnectAttempts;
+        
+        console.log(`🔌 WebSocket close event:`, {
+          code: event.code,
+          reason: closeReason,
+          shouldReconnect,
+          reconnectAttempts: reconnectAttemptsRef.current,
+          maxAttempts: maxReconnectAttempts
+        });
         
         if (isNormalClose) {
           console.log(`WebSocket disconnected normally from ${url}`);
@@ -103,18 +138,21 @@ export const useWebSocket = ({
           console.warn(`WebSocket disconnected from ${url}: ${closeReason}`);
         }
         
+        isConnectingRef.current = false;
         setConnectionStatus('disconnected');
         onConnectionChange?.('disconnected');
         
         // Attempt reconnection based on close code
         if (shouldReconnect) {
-          console.log(`Attempting to reconnect... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+          console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
           reconnectTimeoutRef.current = setTimeout(() => {
-            setReconnectAttempts(prev => prev + 1);
+            reconnectAttemptsRef.current += 1;
+            setReconnectAttempts(reconnectAttemptsRef.current);
             onConnectionChange?.('connecting');
-            connect();
+            // Use a stable reference to avoid infinite loops
+            setTimeout(() => connect(), 0);
           }, reconnectInterval);
-        } else if (reconnectAttempts >= maxReconnectAttempts) {
+        } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
           console.warn(`Max reconnection attempts (${maxReconnectAttempts}) reached. Stopping reconnection.`);
         } else if (!shouldReconnect && !isNormalClose) {
           console.log(`Not attempting to reconnect due to close reason: ${closeReason}`);
@@ -128,6 +166,7 @@ export const useWebSocket = ({
           : `WebSocket error: ${error}`;
         
         console.warn(errorMessage);
+        isConnectingRef.current = false;
         setConnectionStatus('error');
         onConnectionChange?.('error');
         onError?.(error);
@@ -136,26 +175,43 @@ export const useWebSocket = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.warn(`Failed to create WebSocket connection to ${url}: ${errorMessage}`);
+      isConnectingRef.current = false;
       setConnectionStatus('error');
       onConnectionChange?.('error');
     }
-  }, [url, onMessage, onError, onConnectionChange, reconnectInterval, maxReconnectAttempts, reconnectAttempts]);
+  }, [url, onMessage, onError, onConnectionChange, reconnectInterval, maxReconnectAttempts, enabled]); // Add enabled to dependencies
 
   const disconnect = useCallback(() => {
+    console.log(`🔌 Disconnecting WebSocket from ${url}`);
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = undefined;
     }
     if (ws.current) {
       ws.current.close();
       ws.current = null;
     }
+    isConnectingRef.current = false;
     setConnectionStatus('disconnected');
-  }, []);
+  }, [url]);
 
   useEffect(() => {
-    connect();
-    return disconnect;
-  }, [connect, disconnect]);
+    console.log(`🔄 Analytics WebSocket useEffect triggered:`, { enabled, url });
+    
+    // Add a small delay to prevent rapid state changes
+    const timeoutId = setTimeout(() => {
+      if (enabled) {
+        connect();
+      } else {
+        disconnect();
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      disconnect();
+    };
+  }, [enabled, connect, disconnect]);
 
   return {
     connectionStatus,
