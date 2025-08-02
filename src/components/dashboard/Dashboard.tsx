@@ -389,11 +389,11 @@ export const Dashboard: React.FC = () => {
                 </div>
               </Card>
 
-              <Card className="p-2 pb-24 sm:pb-14 md:pb-8 md:p-6 border-0 bg-card/50 shadow-sm">
+              <Card className="p-2 pb-8  md:p-6 border-0 bg-card/50 shadow-sm">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <h3 className="text-sm sm:text-base md:text-lg font-semibold text-foreground truncate">
-                    <span className="sm:hidden">User Heatmap</span>
-                    <span className="hidden sm:inline">User Behavior Heatmap</span>
+                    <span className="sm:hidden">Top Pages</span>
+                    <span className="hidden sm:inline">Top Pages Performance</span>
                   </h3>
                   <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded flex-shrink-0">
                     Recent 20 points

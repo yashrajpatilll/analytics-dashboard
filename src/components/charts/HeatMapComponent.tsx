@@ -7,11 +7,12 @@ interface HeatMapComponentProps {
   height?: number;
 }
 
-interface HeatMapCell {
-  x: number;
-  y: number;
-  value: number;
-  label: string;
+interface TopPageData {
+  path: string;
+  views: number;
+  avgLoadTime: number;
+  bounceRate: number;
+  percentage: number;
 }
 
 export const HeatMapComponent = memo(({
@@ -19,202 +20,174 @@ export const HeatMapComponent = memo(({
   height = 200
 }: HeatMapComponentProps) => {
   const { isDark, mounted } = useTheme();
-  const heatMapData = useMemo(() => {
-    if (!data.length) return { cells: [], pages: [], cellSize: 40 };
+  const topPagesData = useMemo(() => {
+    if (!data.length) return [];
 
-    // Create a grid of user flow interactions
-    const flowMap = new Map<string, number>();
+    // Aggregate top pages data across all data points
+    const pageMap = new Map<string, { views: number, loadTimes: number[], bounceRates: number[] }>();
     
     data.forEach(point => {
-      point.userFlow.forEach(flow => {
-        const key = `${flow.from}-${flow.to}`;
-        flowMap.set(key, (flowMap.get(key) || 0) + flow.count);
+      point.topPages.forEach(page => {
+        const existing = pageMap.get(page.path) || { views: 0, loadTimes: [], bounceRates: [] };
+        existing.views += page.views;
+        existing.loadTimes.push(point.performanceMetrics.loadTime);
+        existing.bounceRates.push(point.bounceRate);
+        pageMap.set(page.path, existing);
       });
     });
 
-    // Get unique pages for x and y axes
-    const pages = new Set<string>();
-    data.forEach(point => {
-      point.userFlow.forEach(flow => {
-        pages.add(flow.from);
-        pages.add(flow.to);
-      });
+    // Convert to array and calculate averages
+    const topPages: TopPageData[] = Array.from(pageMap.entries()).map(([path, data]) => ({
+      path,
+      views: data.views,
+      avgLoadTime: data.loadTimes.reduce((a, b) => a + b, 0) / data.loadTimes.length,
+      bounceRate: data.bounceRates.reduce((a, b) => a + b, 0) / data.bounceRates.length,
+      percentage: 0 // Will be calculated below
+    }));
+
+    // Sort by views and take top 5
+    topPages.sort((a, b) => b.views - a.views);
+    const topFive = topPages.slice(0, 5);
+    
+    // Calculate percentages
+    const totalViews = topFive.reduce((sum, page) => sum + page.views, 0);
+    topFive.forEach(page => {
+      page.percentage = totalViews > 0 ? (page.views / totalViews) * 100 : 0;
     });
 
-    const pageArray = Array.from(pages).slice(0, 3); // Limit to 3 pages for better mobile visibility
-    const cellSize = 35;
-    const cells: HeatMapCell[] = [];
-
-    pageArray.forEach((fromPage, x) => {
-      pageArray.forEach((toPage, y) => {
-        const key = `${fromPage}-${toPage}`;
-        const value = flowMap.get(key) || 0;
-        cells.push({
-          x: x * cellSize,
-          y: y * cellSize,
-          value,
-          label: `${fromPage} → ${toPage}`
-        });
-      });
-    });
-
-    return { cells, pages: pageArray, cellSize };
+    return topFive;
   }, [data]);
 
-  const maxValue = heatMapData.cells.length > 0 
-    ? Math.max(...heatMapData.cells.map(cell => cell.value), 1)
-    : 1;
+  // Use theme colors consistent with other charts
+  const colors = {
+    primary: isDark ? '#c0a080' : '#a67c52',
+    background: isDark ? '#3a322c' : '#fffcf5',
+    text: isDark ? '#c5bcac' : '#7d6b56',
+    muted: isDark ? '#4a4039' : '#dbd0ba',
+    success: isDark ? '#10b981' : '#059669',
+    warning: isDark ? '#f59e0b' : '#d97706',
+    danger: isDark ? '#ef4444' : '#dc2626'
+  };
 
-  const getIntensity = (value: number) => {
-    if (value === 0) {
-      return isDark ? '#2C2C2E' : '#F2F2F7';
-    }
-    
-    const intensity = value / maxValue;
-    
-    if (isDark) {
-      // In dark mode, use brighter colors with higher base opacity
-      const alpha = Math.max(0.3, intensity * 0.85);
-      return `rgba(59, 130, 246, ${alpha})`; // Better blue for dark mode
-    } else {
-      // In light mode, use more subtle colors
-      const alpha = Math.max(0.15, intensity * 0.7);
-      return `rgba(37, 99, 235, ${alpha})`; // Better blue for light mode
-    }
+  const getPerformanceColor = (loadTime: number) => {
+    // Good: < 1s, Warning: 1-2s, Poor: > 2s
+    if (loadTime < 1) return colors.success;
+    if (loadTime < 2) return colors.warning;
+    return colors.danger;
   };
 
   // Don't render until mounted to prevent hydration mismatch
   if (!mounted) {
     return (
       <div className="w-full h-full flex items-center justify-center" style={{ height }}>
-        <div className="text-muted-foreground">Loading heatmap...</div>
+        <div className="text-muted-foreground">Loading page performance...</div>
       </div>
     );
   }
 
-  if (!heatMapData.cells.length) {
+  if (!topPagesData.length) {
     return (
       <div 
         className="flex items-center justify-center bg-muted/50 rounded-lg border-2 border-dashed border-muted"
         style={{ height }}
       >
         <div className="text-center">
-          <p className="text-muted-foreground font-medium">No user flow data available</p>
-          <p className="text-muted-foreground/70 text-sm mt-1">Data will appear here once user interactions are tracked</p>
+          <p className="text-muted-foreground font-medium">No page data available</p>
+          <p className="text-muted-foreground/70 text-sm mt-1">Page performance metrics will appear here</p>
         </div>
       </div>
     );
   }
 
-  const { cells, pages, cellSize } = heatMapData;
-  const svgWidth = pages.length * cellSize;
-  const svgHeight = pages.length * cellSize;
-
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="min-w-0 flex-1 max-w-full h-full">
-        <svg
-          width="100%"
-          height="100%"
-          className="max-w-full h-full"
-          viewBox={`0 0 ${Math.max(svgWidth + 120, 300)} ${Math.max(svgHeight + 80, 200)}`}
-          preserveAspectRatio="xMidYMid meet"
-        >
-        {/* Y-axis labels */}
-        {pages.map((page, index) => (
-          <text
-            key={`y-${page}`}
-            x={65}
-            y={index * cellSize + cellSize / 2 + 4 + 10}
-            textAnchor="end"
-            fontSize="9"
-            fill="currentColor"
-            className="text-xs font-medium text-foreground"
-          >
-            {page.length > 5 ? `${page.substring(0, 5)}...` : page}
-          </text>
-        ))}
-
-        {/* X-axis labels */}
-        {pages.map((page, index) => (
-          <text
-            key={`x-${page}`}
-            x={70 + index * cellSize + cellSize / 2}
-            y={svgHeight + 30}
-            textAnchor="middle"
-            fontSize="9"
-            fill="currentColor"
-            className="text-xs font-medium text-foreground"
-            transform={`rotate(-45, ${70 + index * cellSize + cellSize / 2}, ${svgHeight + 20})`}
-          >
-            {page.length > 5 ? `${page.substring(0, 5)}...` : page}
-          </text>
-        ))}
-
-        {/* Heat map cells */}
-        {cells.map((cell, index) => (
-          <g key={index}>
-            <rect
-              x={70 + cell.x}
-              y={cell.y + 10}
-              width={cellSize - 2}
-              height={cellSize - 2}
-              fill={getIntensity(cell.value)}
-              stroke="hsl(var(--border))"
-              strokeWidth={1}
-              rx={3}
-              className="hover:stroke-primary hover:stroke-2 cursor-pointer transition-all duration-200 hover:opacity-90 hover:drop-shadow-sm"
+    <div className="w-full h-full flex flex-col">
+      {/* Pages list - compact design to fit without scrolling */}
+      <div className="flex-1 p-2 space-y-2 lg:space-y-4">
+        {topPagesData.map((page, index) => {
+          const maxViews = Math.max(...topPagesData.map(p => p.views));
+          const barWidth = (page.views / maxViews) * 100;
+          const performanceColor = getPerformanceColor(page.avgLoadTime);
+          
+          return (
+            <div
+              key={page.path}
+              className="group relative bg-background/50 rounded-lg p-2 border border-muted hover:border-primary/50 transition-all duration-200"
             >
-              <title>{`${cell.label}: ${cell.value} transitions`}</title>
-            </rect>
-            {cell.value > 0 && (
-              <text
-                x={70 + cell.x + cellSize / 2}
-                y={cell.y + 10 + cellSize / 2 + 3}
-                textAnchor="middle"
-                fontSize="8"
-                fill={(() => {
-                  const intensity = cell.value / maxValue;
+              {/* Compact layout - single row */}
+              <div className="flex items-center gap-3">
+                {/* Rank */}
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex-shrink-0">
+                  {index + 1}
+                </span>
+                
+                {/* Page info and bar */}
+                <div className="flex-1 min-w-0">
+                  {/* Page path and percentage */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-foreground text-sm truncate">{page.path}</span>
+                    <span className="text-xs text-muted-foreground font-medium ml-2">
+                      {page.percentage.toFixed(1)}%
+                    </span>
+                  </div>
                   
-                  if (isDark) {
-                    // In dark mode, use black text for high intensity, white text for low
-                    return intensity > 0.6 ? '#000000' : '#FFFFFF';
-                  } else {
-                    // In light mode, use white text for high intensity, dark text for low
-                    return intensity > 0.4 ? '#FFFFFF' : '#1F2937';
-                  }
-                })()}
-                className="pointer-events-none font-semibold"
-              >
-                {cell.value}
-              </text>
-            )}
-          </g>
-        ))}
-
-        {/* Legend */}
-        <g transform={`translate(${Math.max(svgWidth + 80, 250)}, 20)`}>
-          {(() => {
-            const textColor = isDark ? '#F9FAFB' : '#111827';
-            const mutedTextColor = isDark ? '#D1D5DB' : '#6B7280';
-            const lowColor = isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(37, 99, 235, 0.15)';
-            const highColor = isDark ? 'rgba(59, 130, 246, 0.85)' : 'rgba(37, 99, 235, 0.7)';
-            const borderColor = isDark ? '#4B5563' : '#D1D5DB';
-            
-            return (
-              <>
-                <text x={0} y={0} fontSize="10" fill={textColor} fontWeight="600" className="text-xs font-semibold">
-                  Intensity
-                </text>
-                <rect x={0} y={10} width={14} height={6} fill={lowColor} stroke={borderColor} strokeWidth="1" rx="2" />
-                <text x={18} y={15} fontSize="9" fill={mutedTextColor} className="text-xs">Low</text>
-                <rect x={0} y={20} width={14} height={6} fill={highColor} stroke={borderColor} strokeWidth="1" rx="2" />
-                <text x={18} y={25} fontSize="9" fill={mutedTextColor} className="text-xs">High</text>
-              </>
-            );
-          })()}
-        </g>
-        </svg>
+                  {/* Progress bar */}
+                  <div className="w-full bg-muted/30 rounded-full h-1.5 mb-1 overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${barWidth}%`,
+                        backgroundColor: colors.primary
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Metrics - compact row */}
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-foreground font-medium">
+                      {page.views.toLocaleString()}
+                    </span>
+                    <span 
+                      className="font-medium"
+                      style={{ color: performanceColor }}
+                    >
+                      {page.avgLoadTime.toFixed(2)}s
+                    </span>
+                    <span className="text-muted-foreground">
+                      {(page.bounceRate * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Hover tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap">
+                <div className="font-semibold">{page.path}</div>
+                <div>Views: {page.views.toLocaleString()}</div>
+                <div>Load Time: {page.avgLoadTime.toFixed(2)}s</div>
+                <div>Bounce Rate: {(page.bounceRate * 100).toFixed(1)}%</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Legend - fixed at bottom */}
+      <div className="flex-shrink-0 px-2 py-2 border-t border-muted">
+        <div className="flex items-center gap-3 text-xs">
+          <span className="font-medium text-muted-foreground">Performance:</span>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.success }}></div>
+            <span className="text-muted-foreground">Fast</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.warning }}></div>
+            <span className="text-muted-foreground">OK</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.danger }}></div>
+            <span className="text-muted-foreground">Slow</span>
+          </div>
+        </div>
       </div>
     </div>
   );
