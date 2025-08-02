@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { FilterState } from '@/types/analytics';
@@ -24,8 +24,15 @@ export const useURLState = () => {
     setSelectedSite
   } = useDashboardStore();
 
-  // Update URL when state changes
+  // Track if we're currently syncing to prevent infinite loops
+  const isSyncingRef = useRef(false);
+  const lastUrlStateRef = useRef<string>('');
+  const lastStoreStateRef = useRef<string>('');
+
+  // Update URL when state changes (debounced)
   const updateURL = useCallback((updates: Partial<URLStateParams>) => {
+    if (isSyncingRef.current) return;
+    
     const params = new URLSearchParams(searchParams);
     
     // Update or remove parameters
@@ -42,8 +49,24 @@ export const useURLState = () => {
     router.replace(newURL, { scroll: false });
   }, [router, searchParams]);
 
-  // Sync from URL parameters on mount and URL changes
+  // Sync from URL parameters ONLY on mount and when URL actually changes
   useEffect(() => {
+    const currentUrlState = searchParams.toString();
+    
+    // Skip if this is the same URL state we just processed
+    if (currentUrlState === lastUrlStateRef.current) {
+      return;
+    }
+    
+    // Skip if we're currently syncing
+    if (isSyncingRef.current) {
+      return;
+    }
+
+    console.log('🔄 URL state changed, syncing FROM URL to store');
+    isSyncingRef.current = true;
+    lastUrlStateRef.current = currentUrlState;
+
     const urlSelectedSite = searchParams.get('selectedSite');
     const urlSearchQuery = searchParams.get('searchQuery') || '';
     const urlSortBy = searchParams.get('sortBy') as 'name' | 'lastUpdated' | 'dataCount' || 'name';
@@ -51,8 +74,9 @@ export const useURLState = () => {
     const urlDateStart = searchParams.get('dateStart') || undefined;
     const urlDateEnd = searchParams.get('dateEnd') || undefined;
 
-    // Only update if URL has explicit values (don't override with null)
+    // Only update if URL has explicit values and they differ from current state
     if (urlSelectedSite && urlSelectedSite !== selectedSiteId) {
+      console.log('🎯 Syncing selectedSite from URL:', urlSelectedSite);
       setSelectedSite(urlSelectedSite);
     }
 
@@ -61,16 +85,19 @@ export const useURLState = () => {
     let hasChanges = false;
 
     if (filters.searchQuery !== urlSearchQuery) {
+      console.log('🔍 Syncing searchQuery from URL:', urlSearchQuery);
       newFilters.searchQuery = urlSearchQuery;
       hasChanges = true;
     }
 
     if (filters.sortBy !== urlSortBy) {
+      console.log('🔧 Syncing sortBy from URL:', urlSortBy);
       newFilters.sortBy = urlSortBy;
       hasChanges = true;
     }
 
     if (filters.sortOrder !== urlSortOrder) {
+      console.log('🔧 Syncing sortOrder from URL:', urlSortOrder);
       newFilters.sortOrder = urlSortOrder;
       hasChanges = true;
     }
@@ -78,10 +105,12 @@ export const useURLState = () => {
     if (urlDateStart && urlDateEnd) {
       const urlDateRange = { start: urlDateStart, end: urlDateEnd };
       if (JSON.stringify(filters.dateRange) !== JSON.stringify(urlDateRange)) {
+        console.log('📅 Syncing dateRange from URL:', urlDateRange);
         newFilters.dateRange = urlDateRange;
         hasChanges = true;
       }
     } else if (filters.dateRange) {
+      console.log('📅 Clearing dateRange from URL');
       newFilters.dateRange = undefined;
       hasChanges = true;
     }
@@ -89,10 +118,30 @@ export const useURLState = () => {
     if (hasChanges) {
       updateFilters(newFilters);
     }
-  }, [searchParams, selectedSiteId, filters, setSelectedSite, updateFilters]);
 
-  // Update URL when store state changes
+    // Reset sync flag after a short delay to allow state to settle
+    setTimeout(() => {
+      isSyncingRef.current = false;
+    }, 50);
+  }, [searchParams]); // Only depend on searchParams, not store state
+
+  // Update URL when store state changes (with sync guard)
   useEffect(() => {
+    const currentStoreState = JSON.stringify({ selectedSiteId, filters });
+    
+    // Skip if this is the same store state we just processed
+    if (currentStoreState === lastStoreStateRef.current) {
+      return;
+    }
+    
+    // Skip if we're currently syncing from URL
+    if (isSyncingRef.current) {
+      return;
+    }
+
+    console.log('🔄 Store state changed, syncing FROM store to URL');
+    lastStoreStateRef.current = currentStoreState;
+
     const updates: Partial<URLStateParams> = {
       selectedSite: selectedSiteId || undefined,
       searchQuery: filters.searchQuery || undefined,

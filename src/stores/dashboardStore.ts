@@ -96,7 +96,13 @@ export const useDashboardStore = create<DashboardStore>()(
       },
 
       setSelectedSite: (siteId: string | null) => {
-        set({ selectedSiteId: siteId });
+        set((state) => {
+          console.log('🏪 Store setSelectedSite called:', {
+            oldSiteId: state.selectedSiteId,
+            newSiteId: siteId
+          });
+          return { selectedSiteId: siteId };
+        });
       },
 
       setConnectionStatus: (status: DashboardState['connectionStatus']) => {
@@ -130,9 +136,17 @@ export const useDashboardStore = create<DashboardStore>()(
 
       // Filter actions
       updateFilters: (filters: Partial<FilterState>) => {
-        set((state) => ({
-          filters: { ...state.filters, ...filters }
-        }));
+        set((state) => {
+          const newFilters = { ...state.filters, ...filters };
+          console.log('🏪 Store updateFilters called:', {
+            oldFilters: state.filters,
+            updates: filters,
+            newFilters
+          });
+          return {
+            filters: newFilters
+          };
+        });
       },
 
       resetFilters: () => {

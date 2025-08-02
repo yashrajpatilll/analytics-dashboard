@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { UserProfile } from '@/components/ui/UserProfile';
+import { SiteFilters } from '@/components/ui/SiteFilters';
 import { Activity, Wifi, WifiOff, Share2, Check, Users } from 'lucide-react';
 
 const WEBSOCKET_URL = 'ws://localhost:8080';
@@ -25,6 +26,7 @@ export const Dashboard: React.FC = () => {
     selectedSiteId,
     connectionStatus,
     performanceMetrics,
+    filters,
     addDataPoint,
     setSelectedSite,
     setConnectionStatus,
@@ -32,15 +34,31 @@ export const Dashboard: React.FC = () => {
     pruneOldData
   } = useDashboardStore();
 
+  // Debug state changes
+  useEffect(() => {
+    console.log('🏪 Dashboard state changed:', { 
+      selectedSiteId, 
+      sitesCount: sites.length,
+      filtersSearchQuery: filters.searchQuery 
+    });
+  }, [selectedSiteId, sites.length, filters.searchQuery]);
+
   // URL state management
   const { generateShareableURL } = useURLState();
 
   // Handle site selection
   const handleSiteSelection = useCallback((siteId: string) => {
     if (siteId === selectedSiteId) {
+      console.log('🎯 Site already selected:', siteId);
       return;
     }
+    console.log('🎯 Switching to site:', siteId, 'from:', selectedSiteId);
     setSelectedSite(siteId);
+    
+    // Debug: Check if site was actually set
+    setTimeout(() => {
+      console.log('🎯 After selection, selectedSiteId is now:', selectedSiteId);
+    }, 100);
   }, [setSelectedSite, selectedSiteId]);
 
   // Memoize WebSocket callbacks to prevent unnecessary reconnections
@@ -87,6 +105,44 @@ export const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [pruneOldData]);
 
+  // Filter and sort sites based on current filters
+  const filteredSites = useMemo(() => {
+    let filtered = [...sites];
+
+    // Apply search filter
+    if (filters.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      filtered = filtered.filter(site => 
+        site.siteName.toLowerCase().includes(query) ||
+        site.siteId.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (filters.sortBy) {
+        case 'name':
+          comparison = a.siteName.localeCompare(b.siteName);
+          break;
+        case 'lastUpdated':
+          comparison = new Date(a.lastUpdated || 0).getTime() - new Date(b.lastUpdated || 0).getTime();
+          break;
+        case 'dataCount':
+          comparison = a.data.length - b.data.length;
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return filters.sortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    return filtered;
+  }, [sites, filters]);
+
+
   // Get selected site data
   const selectedSite = useMemo(() => {
     return sites.find(site => site.siteId === selectedSiteId) || null;
@@ -94,18 +150,30 @@ export const Dashboard: React.FC = () => {
 
   // Prepare chart data with more aggressive memoization
   const chartData = useMemo(() => {
-    if (!selectedSite || !selectedSite.data.length) return [];
+    if (!selectedSite || !selectedSite.data.length) {
+      console.log('📊 No chart data:', { selectedSite: !!selectedSite, dataLength: selectedSite?.data.length || 0 });
+      return [];
+    }
     
     // Only take the last 30 data points for better performance
     const recentData = selectedSite.data.slice(-30);
     
-    return recentData.map(point => ({
+    const chartData = recentData.map(point => ({
       time: new Date(point.timestamp).toLocaleTimeString(),
       pageViews: point.pageViews,
       uniqueVisitors: point.uniqueVisitors,
       bounceRate: Math.round(point.bounceRate * 100),
       loadTime: Math.round(point.performanceMetrics.loadTime * 100) / 100
     }));
+    
+    console.log('📊 Chart data prepared:', { 
+      siteId: selectedSite.siteId, 
+      totalPoints: selectedSite.data.length,
+      chartPoints: chartData.length,
+      sampleData: chartData[0]
+    });
+    
+    return chartData;
   }, [selectedSite]);
 
   const ConnectionStatus = () => {
@@ -218,14 +286,24 @@ export const Dashboard: React.FC = () => {
 
         {/* Site Selector */}
         <Card className="p-3 sm:p-4 border-0 bg-card/50 shadow-sm gap-2 sm:gap-3 md:gap-6">
-          <h2 className="text-base sm:text-lg font-semibold mb-1 text-foreground">Select Site</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">
+              Select Site ({filteredSites.length})
+            </h2>
+            <SiteFilters />
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {sites.map((site) => (
+            {filteredSites.map((site) => (
               <Button
                 key={site.siteId}
-                onClick={() => handleSiteSelection(site.siteId)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🖱️ Site button clicked:', site.siteId);
+                  handleSiteSelection(site.siteId);
+                }}
                 variant={selectedSiteId === site.siteId ? 'default' : 'outline'}
-                className={`justify-start h-auto p-2 sm:p-3 transition-all duration-200 border-0 text-left ${
+                className={`justify-start h-auto p-2 sm:p-3 transition-all duration-200 border-0 text-left cursor-pointer ${
                   selectedSiteId === site.siteId 
                     ? 'ring-1 ring-ring/20 shadow-sm bg-primary text-primary-foreground' 
                     : 'hover:shadow-sm bg-muted/30 hover:bg-muted/50'
@@ -250,6 +328,13 @@ export const Dashboard: React.FC = () => {
                 {connectionStatus === 'connected' 
                   ? 'No sites connected. Waiting for data...' 
                   : 'No data available. Start the WebSocket server to see analytics data.'}
+              </p>
+            </div>
+          )}
+          {sites.length > 0 && filteredSites.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground text-sm sm:text-base">
+                No sites match your current filters.
               </p>
             </div>
           )}
