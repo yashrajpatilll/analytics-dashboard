@@ -1,6 +1,6 @@
-// Load environment variables
+// Load environment variables (Render provides them directly)
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-require('dotenv').config({ path: '.env.local' });
+require('dotenv').config();
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const WebSocket = require('ws');

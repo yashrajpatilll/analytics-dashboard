@@ -4,11 +4,8 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+# Install only WebSocket server dependencies
+RUN npm init -y && npm install ws dotenv
 
 # Copy WebSocket server file
 COPY websocket-server.js .
