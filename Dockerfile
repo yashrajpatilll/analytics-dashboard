@@ -13,8 +13,8 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy WebSocket server file
 COPY websocket-server.js .
 
-# Copy environment configuration
-COPY .env.local .
+# Environment variables will be provided by Render platform
+# No need to copy .env.local as it's not in git and Render provides env vars
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
