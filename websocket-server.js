@@ -13,13 +13,11 @@ const ENV = process.env.NODE_ENV || 'development';
 const allowedOrigins = [
   'http://localhost:3000',
   'https://localhost:3000',
-  // Add your Vercel deployment URL here when available
-  // 'https://your-app.vercel.app',
-  // Temporary: Allow all Vercel domains for testing
-  'https://analytics-dashboard-chi.vercel.app',
-  'https://analytics-dashboard-git-main-yashrajpatillls-projects.vercel.app',
-  // Add custom domain here when available
-  // 'https://your-custom-domain.com'
+  // Production custom domain
+  'https://dashboard.yashrajpatil.com',
+  // Vercel deployment URLs
+  'https://analytics-dashboard-git-main-yashs-projects-0d2f893e.vercel.app',
+  'https://analytics-dashboard-avkj3omse-yashs-projects-0d2f893e.vercel.app'
 ];
 
 const server = new WebSocket.Server({ 
@@ -34,11 +32,12 @@ const server = new WebSocket.Server({
     const origin = info.origin;
     if (!origin) return false; // Reject requests without origin
     
-    // Allow all Vercel domains for now
-    const isVercelDomain = origin.includes('vercel.app');
+    // Allow domains ending with .vercel.app or .yashrajpatil.com
+    const isVercelDomain = origin.endsWith('.vercel.app');
+    const isYashrajpatilDomain = origin.endsWith('.yashrajpatil.com');
     const isAllowedOrigin = allowedOrigins.includes(origin);
     
-    if (isVercelDomain || isAllowedOrigin) {
+    if (isVercelDomain || isYashrajpatilDomain || isAllowedOrigin) {
       console.log(`✅ Connection allowed from origin: ${origin}`);
       return true;
     } else {
