@@ -15,6 +15,9 @@ const allowedOrigins = [
   'https://localhost:3000',
   // Add your Vercel deployment URL here when available
   // 'https://your-app.vercel.app',
+  // Temporary: Allow all Vercel domains for testing
+  'https://analytics-dashboard-chi.vercel.app',
+  'https://analytics-dashboard-git-main-yashrajpatillls-projects.vercel.app',
   // Add custom domain here when available
   // 'https://your-custom-domain.com'
 ];
@@ -31,7 +34,17 @@ const server = new WebSocket.Server({
     const origin = info.origin;
     if (!origin) return false; // Reject requests without origin
     
-    return allowedOrigins.includes(origin);
+    // Allow all Vercel domains for now
+    const isVercelDomain = origin.includes('vercel.app');
+    const isAllowedOrigin = allowedOrigins.includes(origin);
+    
+    if (isVercelDomain || isAllowedOrigin) {
+      console.log(`✅ Connection allowed from origin: ${origin}`);
+      return true;
+    } else {
+      console.log(`❌ Connection rejected from origin: ${origin}`);
+      return false;
+    }
   }
 });
 
