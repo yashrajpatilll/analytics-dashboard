@@ -74,6 +74,7 @@ export interface ExportState {
 export interface DashboardState {
   sites: Site[];
   selectedSiteId: string | null;
+  selectedSite?: Site | null;
   isConnected: boolean;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
   performanceMetrics: {
@@ -84,6 +85,7 @@ export interface DashboardState {
   };
   // Filtering and URL state
   filters: FilterState;
+  dateRange: { start: Date; end: Date } | null;
   // Export functionality
   exportState: ExportState;
 }

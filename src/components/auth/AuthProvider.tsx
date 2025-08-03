@@ -33,6 +33,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      // Skip if we already have a profile for this user to prevent redundant calls
+      if (userProfile && userProfile.id === userId) {
+        return;
+      }
+
       // TEMPORARILY DISABLED - Skip user profile fetching to prevent API loops
       // Only log once per user session
       if (!sessionStorage.getItem('profile_log_' + userId)) {
@@ -53,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error in fetchUserProfile:', error)
     }
-  }, [])
+  }, [userProfile])
 
   useEffect(() => {
     // Get initial session

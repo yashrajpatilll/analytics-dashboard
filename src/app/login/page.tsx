@@ -2,19 +2,23 @@
 
 import { useAuth } from '@/components/auth/AuthProvider'
 import { AuthForm } from '@/components/auth/AuthForm'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function LoginPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get('redirect')
 
   useEffect(() => {
     if (user && !loading) {
-      console.log('User logged in, redirecting to dashboard')
-      router.push('/')
+      const targetUrl = redirectUrl || '/'
+      console.log('User logged in, redirecting to:', targetUrl)
+      // Use replace instead of push to prevent infinite loops
+      router.replace(targetUrl)
     }
-  }, [user, loading, router])
+  }, [user, loading, router, redirectUrl])
 
   if (loading) {
     return (
@@ -50,7 +54,12 @@ export default function LoginPage() {
         
         {/* Auth Form */}
         <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-          <AuthForm onSuccess={() => router.push('/')} />
+          <AuthForm onSuccess={() => {
+            const targetUrl = redirectUrl || '/'
+            console.log('Auth success, redirecting to:', targetUrl)
+            // Use replace instead of push to prevent infinite loops
+            router.replace(targetUrl)
+          }} />
         </div>
 
         {/* Footer */}
