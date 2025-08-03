@@ -1,5 +1,6 @@
 // Mock ShareService for testing without database
 import { DashboardState, ShareConfig, SharedDashboard } from './shareService';
+import { FilterState } from '@/types/analytics';
 
 export class MockShareService {
   static async createShare(
@@ -65,7 +66,12 @@ export class MockShareService {
     return `${window.location.origin}/share/${shareId}`;
   }
 
-  static extractCurrentDashboardState = (store: any) => ({
+  static extractCurrentDashboardState = (store: {
+    selectedSite?: { siteId: string; siteName: string } | null;
+    filters?: FilterState;
+    dateRange?: { start: Date; end: Date } | null;
+    chartSettings?: Record<string, unknown>;
+  }) => ({
     selectedSiteId: store.selectedSite?.siteId || null,
     dateRange: store.dateRange ? {
       start: store.dateRange.start.toISOString(),

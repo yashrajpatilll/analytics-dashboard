@@ -4,9 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:ws": "node websocket-server.js",
+    "dev:full": "concurrently \"npm run dev\" \"npm run dev:ws\"",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "start:ws": "NODE_ENV=production node websocket-server.js",
+    "lint": "next lint",
+    "test:ws": "node -e \"const WebSocket = require('ws'); const ws = new WebSocket('ws://localhost:8080'); ws.on('open', () => { console.log('✅ WebSocket OK'); ws.close(); }); ws.on('error', (e) => { console.error('❌ WebSocket Error:', e.message); process.exit(1); });\""
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
@@ -40,6 +44,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
+    "concurrently": "^9.1.1",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4",

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { rateLimiter } from '@/lib/rateLimiter';
 import { requestCache } from '@/lib/requestCache';
 

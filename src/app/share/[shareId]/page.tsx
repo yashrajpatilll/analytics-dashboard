@@ -281,7 +281,6 @@ function SharedDashboardContent() {
       <Dashboard 
         isSharedView={true} 
         shareType={shared.shareType}
-        sharedState={shared.dashboardState}
       />
 
       {/* Footer for shared view */}

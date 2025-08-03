@@ -205,7 +205,7 @@ export const useDashboardStore = create<DashboardStore>()(
       },
 
       setPendingSelectedSite: (siteId: string | null) => {
-        set((state) => {
+        set(() => {
           console.log('🔄 Setting pending selected site:', siteId);
           return { 
             pendingSelectedSiteId: siteId 

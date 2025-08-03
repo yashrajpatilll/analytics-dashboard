@@ -4,9 +4,40 @@ require('dotenv').config({ path: '.env.local' });
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const WebSocket = require('ws');
-const server = new WebSocket.Server({ port: 8080 });
 
-console.log('🚀 Analytics WebSocket Server running on ws://localhost:8080');
+// Production-ready configuration
+const PORT = process.env.PORT || 8080;
+const ENV = process.env.NODE_ENV || 'development';
+
+// CORS configuration for production
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://localhost:3000',
+  // Add your Vercel deployment URL here when available
+  // 'https://your-app.vercel.app',
+  // Add custom domain here when available
+  // 'https://your-custom-domain.com'
+];
+
+const server = new WebSocket.Server({ 
+  port: PORT,
+  verifyClient: (info) => {
+    // In development, allow all origins
+    if (ENV === 'development') {
+      return true;
+    }
+    
+    // In production, check allowed origins
+    const origin = info.origin;
+    if (!origin) return false; // Reject requests without origin
+    
+    return allowedOrigins.includes(origin);
+  }
+});
+
+const protocol = ENV === 'production' ? 'wss' : 'ws';
+const host = ENV === 'production' ? '0.0.0.0' : 'localhost';
+console.log(`🚀 Analytics WebSocket Server running on ${protocol}://${host}:${PORT}`);
 
 
 // Connected clients tracking
@@ -50,12 +81,16 @@ const generateDataPoint = () => {
 server.on('connection', (ws) => {
   console.log('🔗 New WebSocket connection');
   
+  // Update performance metrics
+  performanceMetrics.totalConnections++;
+  
   // Store client info
   connectedClients.set(ws, { connectedAt: new Date() });
 
   // Add error handler immediately
   ws.on('error', (error) => {
     console.error('❌ WebSocket error:', error);
+    performanceMetrics.errorsCount++;
   });
   
   console.log('✅ Analytics client connected');
@@ -71,9 +106,11 @@ server.on('connection', (ws) => {
             try {
               const dataPoint = generateDataPoint();
               ws.send(JSON.stringify(dataPoint));
+              performanceMetrics.messagesSent++;
               console.log('📤 Sent data point:', dataPoint.siteName);
             } catch (error) {
               console.error('Error sending initial data:', error);
+              performanceMetrics.errorsCount++;
             }
           }
         }, i * 200);
@@ -86,8 +123,10 @@ server.on('connection', (ws) => {
     if (ws.readyState === WebSocket.OPEN) {
       try {
         ws.send(JSON.stringify(generateDataPoint()));
+        performanceMetrics.messagesSent++;
       } catch (error) {
         console.error('Error sending data:', error);
+        performanceMetrics.errorsCount++;
         clearInterval(interval);
       }
     } else {
@@ -114,8 +153,44 @@ server.on('connection', (ws) => {
   });
 });
 
-// Basic server health monitoring
+// Performance metrics tracking
+const performanceMetrics = {
+  startTime: Date.now(),
+  totalConnections: 0,
+  messagesSent: 0,
+  errorsCount: 0
+};
+
+// Enhanced server health monitoring
 setInterval(() => {
   const activeConnections = connectedClients.size;
-  console.log(`💓 Server heartbeat - ${activeConnections} active connections`);
+  const uptime = Math.floor((Date.now() - performanceMetrics.startTime) / 1000);
+  const memoryUsage = process.memoryUsage();
+  
+  console.log(`💓 Server heartbeat:`, {
+    activeConnections,
+    totalConnections: performanceMetrics.totalConnections,
+    messagesSent: performanceMetrics.messagesSent,
+    errors: performanceMetrics.errorsCount,
+    uptime: `${uptime}s`,
+    memoryMB: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+    environment: ENV
+  });
 }, 30 * 1000); // Every 30 seconds
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ WebSocket server closed.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('🛑 Received SIGINT, shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ WebSocket server closed.');
+    process.exit(0);
+  });
+});

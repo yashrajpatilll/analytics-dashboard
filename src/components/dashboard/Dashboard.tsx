@@ -18,7 +18,7 @@ import { ExportModal } from "@/components/export/ExportModal";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Activity, Wifi, WifiOff, Share2, Download, Eye } from "lucide-react";
 
-const WEBSOCKET_URL = "ws://localhost:8080";
+const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8080";
 
 interface DashboardProps {
   isSharedView?: boolean;

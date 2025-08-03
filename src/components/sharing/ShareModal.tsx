@@ -310,7 +310,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                 <p className="font-medium mb-1">💡 How sharing works:</p>
                 <ul className="space-y-0.5 ml-2">
                   <li>• Share links preserve your current dashboard state</li>
-                  <li>• Public links are view-only and don't require login</li>
+                  <li>• Public links are view-only and don&apos;t require login</li>
                   <li>• Member links require authentication for full access</li>
                   <li>• You can always deactivate shared links later</li>
                 </ul>

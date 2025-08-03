@@ -119,7 +119,7 @@ export const rateLimiter = new RateLimiter();
 
 // Make rate limiter available in dev mode for debugging
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-  (window as any).rateLimiter = rateLimiter;
+  (window as typeof window & { rateLimiter: RateLimiter }).rateLimiter = rateLimiter;
   console.log('Rate limiter available as window.rateLimiter in dev mode');
   console.log('Use rateLimiter.clearAll() to reset all limits');
 }

@@ -26,7 +26,8 @@ export default function DebugPage() {
     }, 1000);
     
     // Test WebSocket connection
-    const ws = new WebSocket("ws://localhost:8080");
+    const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8080";
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log("WebSocket connected");

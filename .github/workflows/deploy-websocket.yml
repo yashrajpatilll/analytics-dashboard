@@ -1,0 +1,67 @@
+name: Deploy WebSocket Server
+
+on:
+  push:
+    branches: [main]
+    paths: 
+      - 'websocket-server.js'
+      - 'package.json'
+      - 'Dockerfile'
+      - 'railway.json'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Test WebSocket server
+        run: |
+          # Start WebSocket server in background
+          node websocket-server.js &
+          WS_PID=$!
+          
+          # Wait for server to start
+          sleep 5
+          
+          # Test connection (basic test)
+          node -e "
+            const WebSocket = require('ws');
+            const ws = new WebSocket('ws://localhost:8080');
+            ws.on('open', () => {
+              console.log('✅ WebSocket server test passed');
+              ws.close();
+              process.exit(0);
+            });
+            ws.on('error', (error) => {
+              console.error('❌ WebSocket server test failed:', error);
+              process.exit(1);
+            });
+            setTimeout(() => {
+              console.error('❌ WebSocket server test timed out');
+              process.exit(1);
+            }, 10000);
+          "
+          
+          # Clean up
+          kill $WS_PID
+      
+      - name: Deploy to Railway
+        if: success()
+        run: |
+          echo "🚀 WebSocket server tests passed, ready for Railway deployment"
+          echo "Configure Railway CLI or use Railway GitHub integration"
+          # Railway deployment would be configured through Railway dashboard
+          # or Railway CLI with proper authentication

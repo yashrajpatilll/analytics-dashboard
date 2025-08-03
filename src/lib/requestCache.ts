@@ -10,7 +10,7 @@ interface CacheEntry<T> {
 }
 
 class RequestCache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   
   /**
    * Get cached result if available and not expired
@@ -24,7 +24,7 @@ class RequestCache {
       return null;
     }
     
-    return entry.data;
+    return entry.data as T;
   }
   
   /**
