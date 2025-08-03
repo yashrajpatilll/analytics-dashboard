@@ -45,6 +45,32 @@ export interface FilterState {
   };
 }
 
+export interface ExportOptions {
+  format: 'csv' | 'pdf';
+  scope: 'current-site' | 'all-sites' | 'filtered';
+  dataTypes: ('summary' | 'timeseries' | 'performance' | 'pages')[];
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  includeCharts?: boolean; // PDF only
+}
+
+export interface ExportData {
+  sites: Site[];
+  filters: FilterState;
+  selectedSiteId: string | null;
+  exportOptions: ExportOptions;
+  userRole: 'Admin' | 'Analyst' | 'Viewer';
+}
+
+export interface ExportState {
+  isExporting: boolean;
+  progress: number;
+  error: string | null;
+  downloadUrl: string | null;
+}
+
 export interface DashboardState {
   sites: Site[];
   selectedSiteId: string | null;
@@ -58,4 +84,6 @@ export interface DashboardState {
   };
   // Filtering and URL state
   filters: FilterState;
+  // Export functionality
+  exportState: ExportState;
 }

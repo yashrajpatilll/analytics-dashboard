@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
-import { useURLState } from '@/hooks/useURLState';
 import { AnalyticsDataPoint } from '@/types/analytics';
 import { LineChartComponent } from '@/components/charts/LineChartComponent';
 import { BarChartComponent } from '@/components/charts/BarChartComponent';
@@ -14,12 +13,17 @@ import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { UserProfile } from '@/components/ui/UserProfile';
 import { SiteFilters } from '@/components/ui/SiteFilters';
-import { Activity, Wifi, WifiOff, Share2, Check } from 'lucide-react';
+import { ShareDashboard } from '@/components/ui/ShareDashboard';
+import { ExportModal } from '@/components/export/ExportModal';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { Activity, Wifi, WifiOff, Share2, Download } from 'lucide-react';
 
 const WEBSOCKET_URL = 'ws://localhost:8080';
 
 export const Dashboard: React.FC = () => {
-  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const { userProfile } = useAuth();
   
   const {
     sites,
@@ -43,8 +47,6 @@ export const Dashboard: React.FC = () => {
     });
   }, [selectedSiteId, sites.length, filters.searchQuery]);
 
-  // URL state management
-  const { generateShareableURL } = useURLState();
 
   // Handle site selection
   const handleSiteSelection = useCallback((siteId: string) => {
@@ -240,17 +242,6 @@ export const Dashboard: React.FC = () => {
     );
   };
 
-  const handleShare = async () => {
-    try {
-      const url = generateShareableURL();
-      await navigator.clipboard.writeText(url);
-      setShareStatus('copied');
-      setTimeout(() => setShareStatus('idle'), 2000);
-    } catch {
-      setShareStatus('error');
-      setTimeout(() => setShareStatus('idle'), 2000);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background p-2 my-2 sm:my-0 sm:p-3 md:p-4 lg:p-6">
@@ -264,26 +255,48 @@ export const Dashboard: React.FC = () => {
               <p className="text-muted-foreground text-xs sm:text-sm">Real-time website performance monitoring</p>
             </div>
             <div className="flex items-center gap-2">
+              {/* Share Button */}
+              <div className="relative">
+                <Button
+                  onClick={() => setShowShareModal(!showShareModal)}
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Share</span>
+                </Button>
+                
+                {showShareModal && (
+                  <div className="absolute top-full right-0 mt-2 z-50">
+                    <ShareDashboard 
+                      onClose={() => setShowShareModal(false)}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* Export Button */}
               <Button
-                onClick={handleShare}
+                onClick={() => setShowExportModal(true)}
                 size="sm"
                 variant="outline"
                 className="flex items-center gap-2"
               >
-                {shareStatus === 'copied' ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <Share2 className="w-4 h-4" />
-                )}
-                <span className="hidden sm:inline">
-                  {shareStatus === 'copied' ? 'Copied!' : 
-                   shareStatus === 'error' ? 'Error' : 
-                   'Share Dashboard'}
-                </span>
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
+              
               <ThemeToggle />
               <UserProfile />
             </div>
+            
+            {/* Export Modal */}
+            <ExportModal
+              isOpen={showExportModal}
+              onClose={() => setShowExportModal(false)}
+              userRole={userProfile?.role || 'Admin'}
+            />
           </div>
           
           {/* Second row: Connection Status and Data Points */}
@@ -363,7 +376,7 @@ export const Dashboard: React.FC = () => {
                   Last 50 points
                 </span>
               </div>
-              <div className="h-48 sm:h-56 md:h-72 lg:h-80">
+              <div className="h-48 sm:h-56 md:h-72 lg:h-80" data-chart="page-views-chart">
                 <LineChartComponent 
                   data={chartData}
                   dataKey="pageViews"
@@ -380,7 +393,7 @@ export const Dashboard: React.FC = () => {
                     Load Time (ms)
                   </span>
                 </div>
-                <div className="h-48 sm:h-56 md:h-72 lg:h-80">
+                <div className="h-48 sm:h-56 md:h-72 lg:h-80" data-chart="performance-chart">
                   <BarChartComponent 
                     data={barChartData}
                     xAxisKey="time"
@@ -399,7 +412,7 @@ export const Dashboard: React.FC = () => {
                     Recent 20 points
                   </span>
                 </div>
-                <div className="h-72 lg:h-80">
+                <div className="h-72 lg:h-80" data-chart="heatmap-chart">
                   <HeatMapComponent 
                     data={selectedSite.data.slice(-20)}
                   />

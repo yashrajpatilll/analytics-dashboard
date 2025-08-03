@@ -74,23 +74,6 @@ export const ShareDashboard: React.FC<ShareDashboardProps> = ({ onClose }) => {
         </div>
 
 
-        {/* Export Options */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Export Dashboard
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" size="sm">
-              Export CSV
-            </Button>
-            <Button variant="outline" size="sm">
-              Export PDF
-            </Button>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Export current data with applied filters
-          </p>
-        </div>
       </div>
     </div>
   );

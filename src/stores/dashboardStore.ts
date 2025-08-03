@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { AnalyticsDataPoint, Site, DashboardState, FilterState } from '@/types/analytics';
+import { AnalyticsDataPoint, Site, DashboardState, FilterState, ExportState } from '@/types/analytics';
 
 interface DashboardActions {
   addDataPoint: (dataPoint: AnalyticsDataPoint) => void;
@@ -11,6 +11,9 @@ interface DashboardActions {
   // Filter actions
   updateFilters: (filters: Partial<FilterState>) => void;
   resetFilters: () => void;
+  // Export actions
+  setExportState: (exportState: Partial<ExportState>) => void;
+  resetExportState: () => void;
 }
 
 type DashboardStore = DashboardState & DashboardActions;
@@ -38,6 +41,13 @@ export const useDashboardStore = create<DashboardStore>()(
       },
       // Filter state
       filters: defaultFilters,
+      // Export state
+      exportState: {
+        isExporting: false,
+        progress: 0,
+        error: null,
+        downloadUrl: null
+      },
 
       // Actions
       addDataPoint: (dataPoint: AnalyticsDataPoint) => {
@@ -151,6 +161,27 @@ export const useDashboardStore = create<DashboardStore>()(
 
       resetFilters: () => {
         set({ filters: defaultFilters });
+      },
+
+      // Export actions
+      setExportState: (exportState: Partial<ExportState>) => {
+        set((state) => ({
+          exportState: {
+            ...state.exportState,
+            ...exportState
+          }
+        }));
+      },
+
+      resetExportState: () => {
+        set({
+          exportState: {
+            isExporting: false,
+            progress: 0,
+            error: null,
+            downloadUrl: null
+          }
+        });
       }
     }),
     {
