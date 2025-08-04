@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { ShareService, type ShareConfig } from '@/lib/shareService';
@@ -16,6 +16,7 @@ interface ShareModalProps {
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
   const dashboardStore = useDashboardStore();
   const { selectedSite, selectedSiteId, sites, filters, dateRange } = dashboardStore;
+  const modalRef = useRef<HTMLDivElement>(null);
   
   // Debug store state when modal opens (FIXED: removed dashboardStore from dependencies)
   React.useEffect(() => {
@@ -26,6 +27,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
       });
     }
   }, [isOpen, selectedSiteId, sites.length]);
+
   const [shareType, setShareType] = useState<'public' | 'member'>('member');
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -99,11 +101,45 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
     setCopyStatus('idle');
   }, []);
 
+  // Handle ESC key press
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        handleClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscapeKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isOpen, handleClose]);
+
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node) && isOpen) {
+        handleClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, handleClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/30 dark:bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background border border-border rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div ref={modalRef} className="bg-background border border-border rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-2">
