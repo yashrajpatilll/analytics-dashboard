@@ -228,50 +228,55 @@ function SharedDashboardContent() {
     <div className="min-h-screen bg-background">
       {/* Shared Dashboard Header */}
       <div className="bg-primary/5 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Eye className="w-5 h-5 text-primary" />
-              </div>
-              
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">
+        <div className="max-w-7xl mx-auto p-4">
+          <div className="flex flex-col gap-4">
+            {/* First row: Icon, Title and Button */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Eye className="w-4 h-4 text-primary" />
+                </div>
+                
+                <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate">
                   Shared Analytics Dashboard
                 </h1>
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2 px-2 py-1 bg-accent border border-border rounded-md">
-                    {shared.shareType === 'public' ? (
-                      <Globe className="w-3 h-3 text-primary" />
-                    ) : (
-                      <Users className="w-3 h-3 text-primary" />
-                    )}
-                    <span className="text-accent-foreground font-medium">
-                      {shared.shareType === 'public' ? 'Public view-only access' : 'Team member access'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    <span>Shared {new Date(shared.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  
-                  <div className="hidden sm:block text-muted-foreground">
-                    <span>{shared.accessCount} views</span>
-                  </div>
-                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
+              
               <Button 
                 onClick={() => router.push('/')}
                 variant="outline"
                 size="sm"
+                className="flex-shrink-0"
               >
                 <Home className="w-4 h-4 mr-2" />
-                Create Your Dashboard
+                <span className="hidden sm:inline">Create Your Dashboard</span>
+                <span className="sm:hidden">Create</span>
               </Button>
+            </div>
+
+            {/* Second row: Access info, date, and views */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+              <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-accent border border-border rounded-md">
+                {shared.shareType === 'public' ? (
+                  <Globe className="w-3 h-3 text-primary" />
+                ) : (
+                  <Users className="w-3 h-3 text-primary" />
+                )}
+                <span className="text-accent-foreground font-medium text-sm">
+                  {shared.shareType === 'public' ? 'Public view-only access' : 'Team member access'}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>Shared {new Date(shared.createdAt).toLocaleDateString()}</span>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <span>{shared.accessCount} views</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
