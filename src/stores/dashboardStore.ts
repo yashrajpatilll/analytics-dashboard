@@ -71,7 +71,7 @@ const defaultSharingState: SharingState = {
 
 const getInitialAISummaryState = (): AISummaryState => {
   // Try to get saved preference from localStorage
-  let isEnabled = true; // Default to enabled for beta showcase
+  let isEnabled = false; // Default to disabled for beta showcase
   
   if (typeof window !== 'undefined') {
     try {
