@@ -10,13 +10,9 @@ import { BarChartComponent } from "@/components/charts/BarChartComponent";
 import { HeatMapComponent } from "@/components/charts/HeatMapComponent";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { UserProfile } from "@/components/ui/UserProfile";
 import { SiteFilters } from "@/components/ui/SiteFilters";
-import { ShareModal } from "@/components/sharing/ShareModal";
-import { ExportModal } from "@/components/export/ExportModal";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { Activity, Wifi, WifiOff, Share2, Download, Eye } from "lucide-react";
+import { Header } from "@/components/dashboard/Header";
 
 const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8080";
 
@@ -309,140 +305,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return data;
   }, [chartData]);
 
-  const ConnectionStatus = () => {
-    const getStatusDisplay = () => {
-      switch (connectionStatus) {
-        case "connected":
-          return {
-            icon: <Wifi className="w-4 h-4 text-green-600" />,
-            text: "Connected",
-            className: "text-green-600",
-          };
-        case "connecting":
-          return {
-            icon: <Wifi className="w-4 h-4 text-yellow-500 animate-pulse" />,
-            text: "Connecting...",
-            className: "text-yellow-600",
-          };
-        case "error":
-          return {
-            icon: <WifiOff className="w-4 h-4 text-red-500" />,
-            text: "Server Unavailable",
-            className: "text-red-600",
-          };
-        default:
-          return {
-            icon: <WifiOff className="w-4 h-4 text-gray-500" />,
-            text: "Disconnected",
-            className: "text-gray-600",
-          };
-      }
-    };
-
-    const status = getStatusDisplay();
-
-    return (
-      <div className="flex items-center gap-2">
-        {status.icon}
-        <span className={`text-sm font-medium ${status.className}`}>
-          {status.text}
-        </span>
-        {connectionStatus !== "connected" &&
-          connectionStatus !== "connecting" && (
-            <Button
-              onClick={reconnect}
-              size="sm"
-              variant="outline"
-              className="ml-2 "
-            >
-              Retry Connection
-            </Button>
-          )}
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-background p-2 my-2 sm:my-0 sm:p-3 md:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="space-y-4 px-1">
-          {/* First row: Title and Controls */}
-          <div className="flex justify-between items-center">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-                Analytics Dashboard
-              </h1>
-              <p className="text-muted-foreground text-xs sm:text-sm">
-                Real-time website performance monitoring
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Share Button - only show if not in shared view and user can share */}
-              {!actualIsSharedView && checkPermission("canShare") && (
-                <Button
-                  onClick={() => setShowShareModal(true)}
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Share</span>
-                </Button>
-              )}
-
-              {/* Export Button - only show if user can export */}
-              {checkPermission("canExport") && (
-                <Button
-                  onClick={() => setShowExportModal(true)}
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export</span>
-                </Button>
-              )}
-
-              {/* Shared View Indicator */}
-              { actualIsSharedView && (
-                <div className="flex items-center gap-2 px-2 py-1 bg-muted border border-border rounded-md">
-                  <Eye className="w-4 h-4 text-primary" />
-                  <span className="text-accent-foreground text-sm font-medium">
-                    {shareType === "public" ? "Public View" : "Shared View"}
-                  </span>
-                </div>
-              )}
-
-              <ThemeToggle />
-              <UserProfile />
-            </div>
-
-            {/* Share Modal */}
-            <ShareModal
-              isOpen={showShareModal}
-              onClose={() => setShowShareModal(false)}
-            />
-
-            {/* Export Modal */}
-            <ExportModal
-              isOpen={showExportModal}
-              onClose={() => setShowExportModal(false)}
-              userRole={userProfile?.role || "Admin"}
-            />
-          </div>
-
-          {/* Second row: Connection Status and Data Points */}
-          <div className="flex flex-row justify-between items-center gap-2 sm:gap-4 mt-2">
-            <ConnectionStatus />
-            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-              <Activity className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="font-medium">
-                {performanceMetrics.dataPointsCount} data points
-              </span>
-            </div>
-          </div>
-        </div>
+        <Header
+          actualIsSharedView={actualIsSharedView}
+          shareType={shareType}
+          checkPermission={checkPermission}
+          showShareModal={showShareModal}
+          setShowShareModal={setShowShareModal}
+          showExportModal={showExportModal}
+          setShowExportModal={setShowExportModal}
+          userProfileRole={userProfile?.role}
+          connectionStatus={connectionStatus}
+          performanceMetrics={performanceMetrics}
+          reconnect={reconnect}
+        />
 
         {/* Site Selector - Hide for public shares, show only selected site */}
         {actualIsSharedView && shareType === "public" ? (
