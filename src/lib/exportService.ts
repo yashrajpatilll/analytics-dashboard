@@ -627,7 +627,7 @@ export class ExportService {
   }
 
   static downloadFile(content: string | Uint8Array, filename: string, mimeType: string): void {
-    const blob = new Blob([content], { type: mimeType });
+    const blob = new Blob([content as BlobPart], { type: mimeType });
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');
