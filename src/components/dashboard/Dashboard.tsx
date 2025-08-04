@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { SiteFilters } from "@/components/ui/SiteFilters";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Header } from "@/components/dashboard/Header";
+import { AISummary } from "@/components/ai/AISummary";
 
 const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8080";
 
@@ -323,6 +324,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           performanceMetrics={performanceMetrics}
           reconnect={reconnect}
         />
+
+        {/* AI Summary - Show when enabled */}
+        <AISummary />
 
         {/* Site Selector - Hide for public shares, show only selected site */}
         {actualIsSharedView && shareType === "public" ? (
