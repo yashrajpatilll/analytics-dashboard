@@ -405,7 +405,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               )}
 
               {/* Shared View Indicator */}
-              { (
+              { actualIsSharedView && (
                 <div className="flex items-center gap-2 px-2 py-1 bg-muted border border-border rounded-md">
                   <Eye className="w-4 h-4 text-primary" />
                   <span className="text-accent-foreground text-sm font-medium">
