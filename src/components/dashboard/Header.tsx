@@ -6,6 +6,8 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { UserProfile } from "@/components/ui/UserProfile";
 import { ShareModal } from "@/components/sharing/ShareModal";
 import { ExportModal } from "@/components/export/ExportModal";
+import { AISummaryToggle } from "@/components/ai/AISummaryToggle";
+import { useDashboardStore } from "@/stores/dashboardStore";
 import { Share2, Download, Eye, Activity, Wifi, WifiOff } from "lucide-react";
 
 interface HeaderProps {
@@ -37,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   performanceMetrics,
   reconnect,
 }) => {
+  const { isEnabled: aiSummaryEnabled, setAISummaryEnabled } = useDashboardStore();
   const ConnectionStatus = () => {
     const getStatusDisplay = () => {
       switch (connectionStatus) {
@@ -131,6 +134,12 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline">Export</span>
             </Button>
           )}
+
+          {/* AI Summary Toggle */}
+          <AISummaryToggle
+            isEnabled={aiSummaryEnabled}
+            onToggle={setAISummaryEnabled}
+          />
 
           {/* Shared View Indicator */}
           {actualIsSharedView && (

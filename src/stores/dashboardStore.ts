@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { AnalyticsDataPoint, Site, DashboardState, FilterState, ExportState } from '@/types/analytics';
+import { AISummaryState } from '@/types/ai';
 
 // Sharing state interface
 interface SharingState {
@@ -40,9 +41,11 @@ interface DashboardActions {
   setIsSharedView: (isShared: boolean, shareType?: 'public' | 'member') => void;
   exitSharedView: () => void;
   checkPermission: (action: keyof SharingState['sharedViewRestrictions']) => boolean;
+  // AI Summary actions
+  setAISummaryEnabled: (enabled: boolean) => void;
 }
 
-type DashboardStore = DashboardState & SharingState & DashboardActions;
+type DashboardStore = DashboardState & SharingState & AISummaryState & DashboardActions;
 
 const MAX_DATA_POINTS_PER_SITE = 1000; // Prevent memory leaks
 
@@ -64,6 +67,31 @@ const defaultSharingState: SharingState = {
   },
   originalState: undefined,
   pendingSelectedSiteId: undefined
+};
+
+const getInitialAISummaryState = (): AISummaryState => {
+  // Try to get saved preference from localStorage
+  let isEnabled = true; // Default to enabled for beta showcase
+  
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('aiSummaryEnabled');
+      if (saved !== null) {
+        isEnabled = JSON.parse(saved);
+      }
+    } catch (error) {
+      console.warn('Failed to load AI Summary preference:', error);
+    }
+  }
+
+  return {
+    isEnabled,
+    isGenerating: false,
+    currentInsight: null,
+    insights: [],
+    lastGenerated: null,
+    error: null
+  };
 };
 
 export const useDashboardStore = create<DashboardStore>()(
@@ -90,6 +118,8 @@ export const useDashboardStore = create<DashboardStore>()(
       },
       // Sharing state
       ...defaultSharingState,
+      // AI Summary state
+      ...getInitialAISummaryState(),
       // Add missing dateRange property
       dateRange: null,
       // Computed selectedSite property
@@ -353,6 +383,18 @@ export const useDashboardStore = create<DashboardStore>()(
         const state = get();
         if (!state.isSharedView) return true;
         return state.sharedViewRestrictions[action];
+      },
+
+      // AI Summary actions
+      setAISummaryEnabled: (enabled: boolean) => {
+        set({ isEnabled: enabled });
+        
+        // Save preference to localStorage
+        try {
+          localStorage.setItem('aiSummaryEnabled', JSON.stringify(enabled));
+        } catch (error) {
+          console.warn('Failed to save AI Summary preference:', error);
+        }
       }
     }),
     {

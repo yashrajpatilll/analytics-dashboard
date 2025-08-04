@@ -47,6 +47,16 @@
   --shadow-2xl: 2px 3px 5px 0px hsl(28 13% 20% / 0.30);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  
+  /* AI Insight Colors */
+  --ai-insight-high: 220 38 127;
+  --ai-insight-high-bg: 253 242 248;
+  --ai-insight-medium: 245 158 11;
+  --ai-insight-medium-bg: 255 251 235;
+  --ai-insight-low: 34 197 94;
+  --ai-insight-low-bg: 240 253 244;
+  --ai-insight-info: 99 102 241;
+  --ai-insight-info-bg: 238 242 255;
 }
 
 .dark {
@@ -94,6 +104,16 @@
   --shadow-lg: 2px 3px 5px 0px hsl(28 13% 20% / 0.12), 2px 4px 6px -1px hsl(28 13% 20% / 0.12);
   --shadow-xl: 2px 3px 5px 0px hsl(28 13% 20% / 0.12), 2px 8px 10px -1px hsl(28 13% 20% / 0.12);
   --shadow-2xl: 2px 3px 5px 0px hsl(28 13% 20% / 0.30);
+  
+  /* AI Insight Colors - Dark Mode */
+  --ai-insight-high: 244 114 182;
+  --ai-insight-high-bg: 39 26 31;
+  --ai-insight-medium: 251 191 36;
+  --ai-insight-medium-bg: 45 40 26;
+  --ai-insight-low: 74 222 128;
+  --ai-insight-low-bg: 22 40 28;
+  --ai-insight-info: 129 140 248;
+  --ai-insight-info-bg: 28 30 44;
 }
 
 /* Mobile optimizations */
