@@ -1,0 +1,79 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'websocket-server.js'
+      - 'Dockerfile'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'websocket-server.js'
+      - 'Dockerfile'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      
+      - name: Lint WebSocket server
+        run: |
+          # Check JavaScript syntax
+          node -c websocket-server.js
+          echo "✅ WebSocket server syntax is valid"
+      
+      - name: Validate Dockerfile
+        run: |
+          # Basic Dockerfile validation
+          if [ -f "Dockerfile" ]; then
+            echo "✅ Dockerfile exists"
+            # Check for basic Dockerfile structure
+            grep -q "FROM" Dockerfile && echo "✅ FROM instruction found" || exit 1
+            grep -q "COPY\|ADD" Dockerfile && echo "✅ File copying instruction found" || exit 1
+          else
+            echo "❌ Dockerfile not found"
+            exit 1
+          fi
+
+  docker-build-test:
+    runs-on: ubuntu-latest
+    needs: lint-and-validate
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        run: |
+          docker build -t websocket-server-test .
+          echo "✅ Docker image built successfully"
+      
+      - name: Test Docker container
+        run: |
+          # Start container in background
+          docker run -d --name test-container -p 8080:8080 websocket-server-test
+          sleep 5
+          
+          # Check if container is running
+          if docker ps | grep -q test-container; then
+            echo "✅ Container is running"
+          else
+            echo "❌ Container failed to start"
+            docker logs test-container
+            exit 1
+          fi
+          
+          # Clean up
+          docker stop test-container
+          docker rm test-container
