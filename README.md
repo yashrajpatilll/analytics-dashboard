@@ -1,8 +1,18 @@
-# 📊 Analytics Dashboard - SonarLabs Assessment
+# 📊 Real Time Traffic Website Monitoring Dashboard
 
 > **Production-Ready Real-Time Analytics Platform**
 > 
-> A sophisticated analytics dashboard showcasing advanced full-stack development with real-time data streaming, professional export systems, AI-powered insights, and enterprise-grade architecture.
+> A real time website traffic analytics dashboard showcasing advanced full-stack development with real-time data streaming, professional export systems, AI-powered insights, and enterprise-grade architecture.
+
+### Gallery
+
+![Analytics Dashboard](gallery/image-1.png)
+
+![Analytics Dashboard](gallery/image-2.png)
+
+![Analytics Dashboard](gallery/image-3.png) 
+
+![Analytics Dashboard](gallery/image-4.png)
 
 ## 🎯 **Quick Start for Evaluators**
 
@@ -408,14 +418,5 @@ This assessment demonstrates capabilities typically found in **senior-level full
 - **Responsive Design**: Mobile-first approach with desktop optimizations
 - **Error Handling**: Comprehensive boundaries and graceful degradation
 - **Performance**: Built-in monitoring and optimization strategies
-
----
-
-## 📄 **Project Information**
-
-**Created for**: SonarLabs Frontend Engineer Assessment  
-**Tech Stack**: Next.js 15, TypeScript, WebSocket, Supabase, Tailwind CSS  
-**Complexity**: Production-grade full-stack application  
-**Features**: Real-time analytics, professional exports, AI integration, authentication  
 
 ---

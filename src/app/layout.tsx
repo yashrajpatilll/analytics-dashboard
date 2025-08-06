@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Analytics Dashboard - SonarLabs",
+  title: "Real Time Traffic Website Monitoring",
   description: "Real-time analytics dashboard for website performance monitoring",
 };
 
