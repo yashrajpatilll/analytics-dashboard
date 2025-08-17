@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { UserProfile } from "@/components/ui/UserProfile";
+import { Logo } from "@/components/ui/Logo";
 import { ShareModal } from "@/components/sharing/ShareModal";
 import { ExportModal } from "@/components/export/ExportModal";
 import { AISummaryToggle } from "@/components/ai/AISummaryToggle";
@@ -99,9 +100,12 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         {/* Title section */}
         <div className="min-w-0 flex-1 text-center sm:text-left">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-            Analytics Dashboard
-          </h1>
+          <div className="flex items-center justify-center sm:justify-start gap-3 mb-1">
+            <Logo width={24} height={29} />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+              Analytics Dashboard
+            </h1>
+          </div>
           <p className="text-muted-foreground text-xs sm:text-sm">
             Real-time website performance monitoring
           </p>
